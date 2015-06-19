@@ -1,0 +1,16 @@
+#!/bin/bash
+
+function cpudir.initialize {
+  cpudir="${MWGDIR:-$HOME/.mwg}/cpulook"
+  test -d "$cpudir" && return
+  local _scr="$(readlink -f "$0" || /bin/readlink -f "$0" || echo "$0")"
+  local _dir="${_scr%/*}"
+  test "x$_dir" = "x$_scr" && _dir=.
+  test -z "$_dir" && _dir=/
+  cpudir="$_dir"
+}
+cpudir.initialize
+
+host="$($cpudir/cpugethost.sh "$1")" || exit 1
+
+rsh "$host" last|less

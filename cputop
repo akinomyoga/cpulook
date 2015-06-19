@@ -1,0 +1,42 @@
+#!/bin/bash
+
+function cpudir.initialize {
+  local _scr="$(readlink -f "$0" || /bin/readlink -f "$0" || echo "$0")"
+  local _dir="${_scr%/*}"
+  test "x$_dir" = "x$_scr" && _dir=.
+  test -z "$_dir" && _dir=/
+  cpudir="$_dir"
+}
+cpudir.initialize
+
+mwg_check () {
+  if ! eval "$1"; then
+    echo "$2" >/dev/stderr
+    exit 1
+  fi
+}
+
+fA=
+host=
+while test $# -gt 0; do
+  case "$1" in
+  -a)
+    fA=1 # show all processes
+    ;;
+  *)
+    mwg_check "test -z '$host'" "$0:arg\"$1\": host is already specified!"
+    host="$1"
+    ;;
+  esac
+  shift
+done
+
+mwg_check "test -n '$host'" "$0: host is not specified!"
+
+host="$($cpudir/cpugethost.sh "$host")" || exit 1
+
+if test -n "$fA"; then
+  rsh "$host" COLUMNS="$((COLUMNS-1))" top -cb -n 1
+else
+  rsh "$host" COLUMNS="$((COLUMNS-1))" top -cb -n 1 | awk '$1=="PID"{head=1;print;next} !head||$8!="S"||$9!=0{print}'
+fi

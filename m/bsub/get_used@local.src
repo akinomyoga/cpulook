@@ -1,0 +1,37 @@
+#!/bin/bash
+
+if test -z "$cpudir"; then
+  cpudir="$HOME/.mwg/cpulook"
+fi
+
+tmpdir="$cpudir/tmp"
+if test ! -d "$tmpdir"; then
+  mkdir "$tmpdir"
+fi
+
+ftmp="$tmpdir/bsub.used.part"
+fdat="$tmpdir/bsub.used.dat"
+
+bjobs -u all | awk '
+  BEGIN{
+    beg=-1;
+  }
+  /EXEC_HOST/{
+    beg=index($0,"EXEC_HOST");
+    next
+  }
+  {
+    user=$2;
+    if($3=="RUN"){
+      if(beg<0)next;
+      host=substr($0,beg);
+      sub(/[\. ].*$/,"",host);
+      if(host!="")
+        print user,host;
+    }else if($3=="PEND"){
+      print user,"PEND";
+    }
+  }
+' > "$ftmp"
+
+test -s "$ftmp" && mv "$ftmp" "$fdat"

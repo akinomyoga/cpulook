@@ -1,0 +1,169 @@
+#!/bin/bash
+
+function cpudir.initialize {
+  # cpudir="${MWGDIR:-$HOME/.mwg}/cpulook"
+  # test -d "$cpudir" && return
+  local _scr="$(readlink -f "$0" || /bin/readlink -f "$0" || echo "$0")"
+  local _dir="${_scr%/*}"
+  test "x$_dir" = "x$_scr" && _dir=.
+  test -z "$_dir" && _dir=/
+  cpudir="$_dir"
+}
+cpudir.initialize
+#: ${cpudir:="$MWGDIR/cpulook"}
+
+#------------------------------------------------------------------------------
+# definitions
+
+: ${MWGDIR:="$HOME/.mwg"}
+SUBTYPE="$cpudir/m/switch"
+
+cpulist="$cpudir/cpulist.cfg"
+list="$cpudir/task.txt"
+cook="$cpudir/task.eat"
+stat="$cpudir/tmp/cpustat.txt"
+seeklog="$cpudir/cpuseekd.log"
+
+# configuration
+cpu_wait=300
+task_wait=600
+
+if test "$1" == 'v'; then
+  fV=v
+  source "$MWGDIR/libexec/echox"
+  # echom 'dbg: verbose mode'
+else
+  fV=
+fi
+
+fileage () {
+  # how many seconds has past since the file was modified
+  local file="$1"
+  echo $(($(date '+%s')-$(date '+%s' -r "$file")))
+}
+
+isvalidcpu () {
+  cpus="$(cat "$cpulist"|awk '/^[[:space:]]*#/{next;}/[^[:space:]]/{print $1}')"
+  for cpu in $cpus; do
+    test "$cpu" == "$1" && return 0
+  done
+
+  echoe "fatal: invalid cpu name '$1'"
+  return 1
+}
+
+#------------------------------------------------------------------------------
+# cpu managing
+
+declare -a cpustat_name
+declare -a cpustat_idle
+declare -a cpustat_info
+declare    cpustat_size=0
+declare    cpustat_first=1
+update_cpustat () {
+  if test -n "$fV"; then
+    echom "updating current cpustatus ..."
+    "$cpudir/cpulook" 10
+  else
+    "$cpudir/cpulook" 10 &>/dev/null
+  fi
+
+  cpustat_first=
+  cpustat_size=0
+  while read line; do
+    local -a arr=($line)
+    cpustat_name[${arr[0]}]=${arr[1]}
+    cpustat_idle[${arr[0]}]=${arr[2]}
+    cpustat_nice[${arr[0]}]=${arr[3]}
+    cpustat_size=$(($cpustat_size+1))
+  done < <(awk 'BEGIN{i=0} $3!="I"{print i++,$1,$3,$4}' "$stat")
+}
+
+declare freecpu_name
+declare freecpu_nice
+allocate_cpu () {
+  if test -z "$cpustat_first" -a "$cpustat_size" -eq 0; then
+    # 残機がないとき暫く待って再度取得
+    if test -e "$stat"; then
+      local _wait="$((60-$(fileage "$stat")))"
+      ((_wait>0)) && sleep "$_wait"
+    fi
+    update_cpustat
+  elif test -n "$cpustat_first" -o ! -e "$stat" -o $(fileage "$stat") -gt 60; then
+    # cpustat 情報が古い時、更新
+    update_cpustat
+  fi
+
+  while true; do
+    local name=""
+
+    local j
+    local n=$cpustat_size
+    for((j=0;j<n;j++)); do
+      if test "${cpustat_idle[$j]}" -gt 0; then
+        local name="${cpustat_name[$j]}"
+        local idle="${cpustat_idle[$j]}"
+        local nice="${cpustat_nice[$j]}"
+        cpustat_idle[$j]=$(($idle-1))
+
+        isvalidcpu "$name" || name=''
+        break
+      fi
+    done
+    
+    if test -z "$name"; then
+      datetime="$(date +'[%x %T]')"
+      test -n "$fV" && echom "$datetime there are no more cpus available. waiting for $cpu_wait seconds ..."
+      sleep $cpu_wait
+      update_cpustat
+      continue
+    fi
+
+    freecpu_name=$name
+    freecpu_nice=$nice
+    return
+  done
+}
+
+#------------------------------------------------------------------------------
+#-- single instance guard --
+test "$(ps ux|grep '\bcpuseekd\b'|wc -l)" -gt 1 || exit 0
+
+seek_submit () {
+  local cmd="$1"
+
+  allocate_cpu
+  local name=$freecpu_name
+  local nice=$freecpu_nice
+  test $name == '0' && exit 1
+
+  datetime="$(date +'[%x %T]')"
+  log_submit () {
+    echo "$datetime $1" >> $seeklog
+    test -n "$fV" && echom "$datetime $1"
+  }
+
+  source "$SUBTYPE/submit.src"
+  return
+}
+
+set_term_title () { echo -n $'\ek'"$*"$'\e\\'; }
+
+next_tasklist () {
+  test -s "$list" && return 0
+
+  set_term_title "cpuseekd: ### waiting next task.txt... ###"
+  sleep $task_wait
+  test -s "$list"
+}
+
+while next_tasklist; do
+  test -f "$cook" && mv "$cook" "$cook.$(date +%Y%m%d-%H%M%S -r "$cook")"
+  mv "$list" "$cook"
+  iN=`cat "$cook"|wc -l`
+  for((i=1;i<=iN;i++)); do
+    set_term_title "cpuseekd: ### throwing task $i/$iN ###"
+    cmd="$(tail -n +$i $cook|head -1)"
+    test -n "$cmd" && seek_submit "$cmd"
+  done
+done

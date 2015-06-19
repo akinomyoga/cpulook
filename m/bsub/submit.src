@@ -1,0 +1,18 @@
+#!/bin/bash
+
+# log_submit "message"
+# name = hostname
+# nice = nice value
+# cmd  = command
+
+# title="${cmd#. ~/.bashrc ; cd * ; }"
+# title="${title% &>*}"
+# title="${title% >*}"
+title=$(echo "$cmd"|sed '
+  s#^\. ~/\.bashrc \?; \?cd [^;[:space:]]\+ \?; \?##
+  s# \?[&[:digit:]]\?>[^>&;|]\+$##
+')
+
+log_submit "host: $name  title: $title"
+log_submit "bsub -e /dev/null -o /dev/null -m \"$name\" -J \"$title\" \"$cmd\""
+bsub -e /dev/null -o /dev/null -m "$name" -J "$title" "$cmd"

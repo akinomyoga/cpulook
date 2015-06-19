@@ -1,0 +1,94 @@
+#!/bin/bash
+
+# requirement:
+#   set shell variables `uuse' and `guse'
+
+#
+# ChangeLog
+#
+# 2013-05-06, Koichi Murase <murase@nt.phys.s.u-tokyo.ac.jp>
+#   * changed to output results to standard output
+#
+# 2013-05-06, Koichi Murase <murase@nt.phys.s.u-tokyo.ac.jp>
+#   * added a call of cpujobs.awk to generate jobslist
+# 
+# 2013-05-06, Koichi Murase <murase@nt.phys.s.u-tokyo.ac.jp>
+#   * again implemented using the bjobs command in localhost
+#
+# 2013-05-04, Koichi Murase <murase@nt.phys.s.u-tokyo.ac.jp>
+#   * changed the variable name `used' to `uuse'
+#   * added the support for the variable `guse'
+#
+# 2013-04-24 KM
+#   * changed to count the command `sbatchd' as well as the `.lsbatch/*'
+#
+# 2013-03-15 KM
+#   * change implementation to use the `ps' commnad
+#     because the `bsub' command seems not necessarily available in the all hosts.
+#
+# 2012-04-24 KM
+#   * implementation using the `bjobs' command
+#
+
+test -n "$cpudir" || cpudir="${MWGDIR:-$HOME/.mwg}/cpulook"
+test -n "$host" || host=${HOSTNAME%%.*}
+
+getUsedWithLocalBjobs(){
+  local fdat="$cpudir/tmp/bsub.used.dat"
+  local result=($(awk '
+    BEGIN{
+      USER="'"$USER"'";
+      HOST="'"$host"'";
+      uuse=guse=0;
+      upend=gpend=0;
+    }
+    $2==HOST{
+      if($1==USER)uuse++;
+      guse++;
+    }
+    $2=="PEND"{
+      if($1==USER)upend++;
+      gpend++;
+    }
+    END{
+      print uuse,guse,upend,gpend
+    }
+  ' "$fdat"))
+  uuse=${result[0]}
+  guse=${result[1]}
+  upend=${result[2]}
+  gpend=${result[3]}
+
+  # echo "user=$USER host=$host uuse=$uuse guse=$guse" >"$cpudir/tmp/bsub.$host.used"
+}
+
+getUsedWithLocalBjobs
+
+# fjobs="$cpudir/tmp/$host.jobs"
+exec 5>&1
+fjobs="/dev/fd/5"
+echo "==cpulook.jobs==" >&5
+result="$(ps uaxf | type="lava.used" host="$host" fjobs="$fjobs" "$cpudir/cpujobs.awk")"
+
+# # v20130504
+# uuse=$(ps ux|egrep '/bin/sh '"$HOME"'/\.lsbatch/[[:digit:]]|/usr/share/lava/.+/sbatchd$'|awk '$1=="'"$USER"'"'|wc -l)
+# get_guse() {
+#   local fdat="$cpudir/tmp/used@local.dat"
+#   if test -s "$fdat"; then
+#     awk '$2=="'"$host"'"{print $1;}' "$fdat"
+#   else
+#     echo "$uuse"
+#   fi
+# }
+# guse=$(get_guse)
+
+# # v20130311
+# used=$(ps ux|grep "$HOME/\.lsbatch/[[:digit:]]"|awk '$0~/\/bin\/sh \/home\/'"$USER"'\/\.[l]sbatch\/[[:digit:]]/&&$1=="'"$USER"'"'|wc -l)
+
+# # v20120424
+# used=$(($(bjobs -m $HOSTNAME 2>&1 |wc -l)-1))
+
+# # dbg20120424
+# dbg=$HOME/.mwg/cpulook/m/bsub/debug.$HOSTNAME.txt
+# echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH PATH=$PATH" >$dbg
+# used=$(($(bjobs -m $HOSTNAME 2>&1 |tee -a $dbg|wc -l)-1))

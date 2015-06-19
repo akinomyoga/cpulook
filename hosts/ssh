@@ -1,0 +1,12 @@
+#!/bin/bash
+# to source
+
+case "$1" in
+(rsh)
+  shift
+  ssh "$host" "cd .mwg/cpulook; $*"
+  return 0 ;;
+(*)
+  echo not supported operation >&2
+  return 1 ;;
+esac

@@ -1,0 +1,23 @@
+#!/bin/bash
+
+function cpudir.initialize {
+  local _scr="$(readlink -f "$0" || /bin/readlink -f "$0" || echo "$0")"
+  local _dir="${_scr%/*}"
+  test "x$_dir" = "x$_scr" && _dir=.
+  test -z "$_dir" && _dir=/
+  cpudir="$_dir"
+}
+cpudir.initialize
+
+: ${MWGDIR:="$HOME/.mwg"}
+SUBTYPE="$cpudir/m/switch"
+flog="$cpudir/cpuseekd.log"
+
+source "$MWGDIR/libexec/echox"
+datetime="$(date +'[%x %T]')"
+log_submit () {
+  echo "$datetime $1" >> "$flog"
+  echom "$datetime $1"
+}
+
+source "$SUBTYPE/cpukill.src" "$@"
