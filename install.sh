@@ -2,7 +2,6 @@
 
 : ${MWGDIR:="$HOME/.mwg"}
 : ${CPUDIR:="$MWGDIR/share/cpulook"}
-test "x${CPUDIR%/}" == "x${PWD%/}" && exit
 
 function create-dir {
   if test ! -d "$1"; then
@@ -52,49 +51,51 @@ update ext/echox "$MWGDIR/libexec/echox"
 #------------------------------------------------------------------------------
 # .mwg/share/cpulook
 
-create-dir "$CPUDIR"
+if [[ ${CPUDIR%/} != ${PWD%/} ]]; then
+  create-dir "$CPUDIR"
 
-# update m/
-create-dir "$CPUDIR/m"
-for d in m/*; do
-  if test -d "$d"; then
-    cp -rfp "$d" "$CPUDIR/m/"
+  # update m/
+  create-dir "$CPUDIR/m"
+  for d in m/*; do
+    if test -d "$d"; then
+      cp -rfp "$d" "$CPUDIR/m/"
+    fi
+  done
+
+  # create m/switch
+  if test ! -e "$CPUDIR/m/switch"; then
+    if type bsub &>/dev/null; then
+      ln -fs bsub "$CPUDIR/m/switch"
+    else
+      ln -fs rsh  "$CPUDIR/m/switch"
+    fi
   fi
-done
 
-# create m/switch
-if test ! -e "$CPUDIR/m/switch"; then
-  if type bsub &>/dev/null; then
-    ln -fs bsub "$CPUDIR/m/switch"
-  else
-    ln -fs rsh  "$CPUDIR/m/switch"
+  # update scripts
+  update cpulist-default.cfg
+  update cpujobs.awk
+  update-script cpugetdata.sh
+  update-script cpugethost.sh
+  update-script cpukill
+  update-script cpulast
+  update-script cpulook
+  update-script cpups
+  update-script cpuseekd
+  update-script cpusub
+  update-script cputop
+
+  # create configuration
+  if [[ ! -s $CPUDIR/cpulist.cfg ]]; then
+    echo "cpulook-install: creating default '$CPUDIR/cpulist.cfg'."
+    cp -f "$CPUDIR/cpulist-default.cfg" "$CPUDIR/cpulist.cfg"
+    echo "cpulook-install: [1mplease edit '$CPUDIR/cpulist.cfg'.[m"
   fi
-fi
-
-# update scripts
-update cpulist-default.cfg
-update cpujobs.awk
-update-script cpugetdata.sh
-update-script cpugethost.sh
-update-script cpukill
-update-script cpulast
-update-script cpulook
-update-script cpups
-update-script cpuseekd
-update-script cpusub
-update-script cputop
-
-# create configuration
-if test ! -s "$CPUDIR/cpulist.cfg"; then
-  echo "cpulook-install: creating default '$CPUDIR/cpulist.cfg'."
-  cp -f "$CPUDIR/cpulist-default.cfg" "$CPUDIR/cpulist.cfg"
-  echo "cpulook-install: [1mplease edit '$CPUDIR/cpulist.cfg'.[m"
 fi
 
 #------------------------------------------------------------------------------
 # .mwg/bin
 
-if test ! -d "$MWGDIR/bin"; then
+if [[ ! -d $MWGDIR/bin ]]; then
   create-dir "$MWGDIR/bin"
 fi
 

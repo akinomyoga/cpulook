@@ -10,5 +10,6 @@
 /hosts/*.sh
 
 # edit files, and back up files
+/tmp
 *~
 *.edit
