@@ -1,8 +1,6 @@
 #!/bin/bash
 
-if test -z "$cpudir"; then
-  cpudir="$HOME/.mwg/cpulook"
-fi
+: ${cpudir:="$HOME/.mwg/share/cpulook"}
 
 tmpdir="$cpudir/tmp"
 if test ! -d "$tmpdir"; then

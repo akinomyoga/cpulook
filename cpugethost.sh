@@ -4,13 +4,12 @@ function cpudir.initialize {
   local _scr="$(test -h "$0" && { readlink -f "$0" || /bin/readlink -f "$0"; } || echo "$0")"
   local _dir="${_scr%/*}"
   test "x$_dir" = "x$_scr" && _dir=.
-  test -z "$_dir" && _dir=/
+  [[ $_dir ]] || _dir=/
   cpudir="$_dir"
 }
 cpudir.initialize
 
-CPUDIR="$cpudir"
-CPULST="$CPUDIR/cpulist.cfg"
+CPULST="$cpudir/cpulist.cfg"
 
 declare key="$1"
 

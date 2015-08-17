@@ -1,7 +1,7 @@
 #!/bin/bash
 
 : ${MWGDIR:="$HOME/.mwg"}
-: ${CPUDIR:="$MWGDIR/cpulook"}
+: ${CPUDIR:="$MWGDIR/share/cpulook"}
 test "x${CPUDIR%/}" == "x${PWD%/}" && exit
 
 function create-dir {
@@ -21,7 +21,7 @@ function update {
 
   # cpudir 算出を書き換える場合
   # sed '
-  #   /^function cpudir\.initialize/i cpudir="$HOME/.mwg/cpulook"
+  #   /^function cpudir\.initialize/i cpudir="$HOME/.mwg/share/cpulook"
   #   /^function cpudir\.initialize/,/^cpudir\.initialize/d
   # ' cputop
 }
@@ -50,7 +50,7 @@ create-dir "$MWGDIR/libexec"
 update ext/echox "$MWGDIR/libexec/echox"
 
 #------------------------------------------------------------------------------
-# .mwg/cpulook
+# .mwg/share/cpulook
 
 create-dir "$CPUDIR"
 

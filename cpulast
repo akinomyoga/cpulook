@@ -1,7 +1,7 @@
 #!/bin/bash
 
 function cpudir.initialize {
-  cpudir="${MWGDIR:-$HOME/.mwg}/cpulook"
+  cpudir="${MWGDIR:-$HOME/.mwg}/share/cpulook"
   test -d "$cpudir" && return
   local _scr="$(readlink -f "$0" || /bin/readlink -f "$0" || echo "$0")"
   local _dir="${_scr%/*}"

@@ -30,8 +30,8 @@
 #   * implementation using the `bjobs' command
 #
 
-test -n "$cpudir" || cpudir="${MWGDIR:-$HOME/.mwg}/cpulook"
-test -n "$host" || host=${HOSTNAME%%.*}
+: ${cpudir:="${MWGDIR:-$HOME/.mwg}/share/cpulook"}
+: ${host:=${HOSTNAME%%.*}}
 
 getUsedWithLocalBjobs(){
   local fdat="$cpudir/tmp/bsub.used.dat"

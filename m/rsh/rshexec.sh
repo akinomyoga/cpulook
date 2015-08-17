@@ -1,9 +1,22 @@
 #!/bin/bash
 
-CPUDIR="${MWGDIR:-$HOME/.mwg}/cpulook"
+function cpudir.initialize {
+  local _scr="$(test -h "$0" && { readlink -f "$0" || /bin/readlink -f "$0"; } || echo "$0")"
+  local _dir="${_scr%/*}"
+  [[ $_dir == $_scr ]] && _dir=.
+  [[ $_dir ]] || _dir=/
+  cpudir="$_dir"
+}
+cpudir.initialize
+
+if [[ $cpudir ~ ^(.*)/m/rsh/?$ ]]; then
+  cpudir="$BASH_REMATCH"
+else
+  cpudir="$cpudir/../../"
+fi
 
 # log_submit
-seeklog="$CPUDIR/cpuseekd.log"
+seeklog="$cpudir/cpuseekd.log"
 datetime="$(date +'[%x %T]')"
 log_submit() {
   echo "$datetime rshexec.sh: $*" >> "$seeklog"
