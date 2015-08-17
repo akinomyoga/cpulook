@@ -6,3 +6,9 @@
 /log
 /cpuseekd.log
 /test
+
+/hosts/*.sh
+
+# edit files, and back up files
+*~
+*.edit

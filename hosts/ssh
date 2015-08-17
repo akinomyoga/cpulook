@@ -1,10 +1,12 @@
 #!/bin/bash
 # to source
 
+: ${remote_cpudir:=.mwg/share/cpulook}
+
 case "$1" in
 (rsh)
   shift
-  ssh "$host" "cd .mwg/cpulook; $*"
+  ssh "$host" "cd $remote_cpudir; $*"
   return 0 ;;
 (*)
   echo not supported operation >&2

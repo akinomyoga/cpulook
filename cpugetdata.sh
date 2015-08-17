@@ -11,19 +11,30 @@ cpudir.initialize
 
 SUBTYPE="$cpudir/m/switch"
 
-test -z "$1" && exit 0
+[[ $1 ]] || exit 0
 host=$1
 
 # read cpulist.cfg
-cpuline="$(awk '$1=="'$host'"' "$cpudir/cpulist.cfg")"
-if test -z "$cpuline"; then
-  ncor="$(cat /proc/cpuinfo | grep processor | wc -l)"
-  cpuline="$(echo $host $ncor $ncor 20 $ncor)" # remove linebreaks
-  echo "$cpuline" >> "$cpudir/cpulist.cfg"
-fi
 
 # cpuinfo
-cpuinfo=($cpuline)
+function cpuinfo.load {
+  if (($#>=5)); then
+    cpuinfo=("$@")
+    return
+  fi
+
+  local cpuline="$(awk '$1=="'$host'"' "$cpudir/cpulist.cfg" 2>/dev/null)"
+  if [[ $cpuline ]]; then
+    cpuinfo=($cpuline)
+    return
+  fi
+
+  local ncor="$(grep -c processor /proc/cpuinfo)"
+  cpuinfo=($host $ncor $ncor 20 $ncor)
+  echo "${cpuinfo[*]}" >> "$cpudir/cpulist.cfg"
+}
+
+cpuinfo.load "$@"
 ncor=${cpuinfo[1]}
 gmax=${cpuinfo[2]}
 nice=${cpuinfo[3]}
@@ -35,7 +46,7 @@ test -z "$umax" && umax="$gmax"
 
 # status
 util=$(top -b -n 1 | awk '/^ *[[:digit:]]/{a+=$9;}END{print a;}')
-load=$(cat /proc/loadavg | awk '{print int($1*100);exit}')
+load=$(awk '{print int($1*100);exit}' /proc/loadavg)
 source "$SUBTYPE/get_used.src"
 
 # getline

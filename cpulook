@@ -3,8 +3,6 @@
 #------------------------------------------------------------------------------
 # utilities
 
-source_if() { test -s "$1" && source "$@"; }
-
 fileage () {
   local file="$1"
   if test -e "$file"; then
@@ -19,12 +17,14 @@ function wait-until {
   local it itN
   itN=$(:|awk 'BEGIN{print int('"$timeout/0.2"')}')
   for((it=0;it<itN;it++));do
-    case $((it%4)) in
-    0) echo -n 'waiting ...|' >&2 ;;
-    1) echo -n 'waiting .../' >&2 ;;
-    2) echo -n 'waiting ...-' >&2 ;;
-    3) echo -n 'waiting ...\' >&2 ;;
-    esac
+    if [[ -t 2 ]]; then
+      case $((it%4)) in
+      0) echo -n 'waiting ...|' >&2 ;;
+      1) echo -n 'waiting .../' >&2 ;;
+      2) echo -n 'waiting ...-' >&2 ;;
+      3) echo -n 'waiting ...\' >&2 ;;
+      esac
+    fi
     sleep 0.2
     "$condcmd" && break
   done
@@ -152,13 +152,22 @@ function cpudir.initialize {
 cpudir.initialize
 
 tmpdir="$cpudir/tmp"
-test -d "$tmpdir" || mkdir -p "$tmpdir"
+[[ -d $tmpdir ]] || mkdir -p "$tmpdir"
 
 cpustat="$tmpdir/cpustat.txt"
 cpujobs="$tmpdir/cpujobs.txt"
 cpulist="$cpudir/cpulist.cfg"
 
 timeout="${1:-5}"
+
+function cpulist.load {
+  cpulist_data=()
+  local line= rex_comment='^[[:space:]]*(#|$)'
+  while IFS= read -r line || [[ $line ]]; do
+    [[ $line =~ $rex_comment ]] && continue
+    cpulist_data[${#cpulist_data[@]}]="$line"
+  done < "$cpulist"
+}
 
 #------------------------------------------------------------------------------
 # base
@@ -168,7 +177,7 @@ function rsh.dispatch {
   local command="$*"
 
   local handler="$cpudir/hosts/$host.sh"
-  if test -s "$handler"; then
+  if [[ -s $handler ]]; then
     source "$handler" rsh "$command" && return
   fi
 
@@ -178,54 +187,66 @@ function rsh.dispatch {
 #------------------------------------------------------------------------------
 # cpulook
 
-# cat "$cpustat" | cpustat.view
-# exit 0
-
 # show cache
-if test -e "$cpustat" -a $(fileage "$cpustat") -lt 10 ; then
-  test -s "$cpujobs" && cat "$cpujobs" | cpujobs.view
-  cat "$cpustat" | cpustat.view
+if [[ -e $cpustat && $(fileage "$cpustat") -lt 10 ]]; then
+  test -s "$cpujobs" && cpujobs.view < "$cpujobs"
+  cpustat.view < "$cpustat"
   exit 0
 fi
 
+# load cpulist.cfg
+cpulist.load
+declare -a hosts
+hosts=("${cpulist_data[@]%%[$IFS]*}")
+
 ftime="$cpudir/tmp/cpulook.time"
-touch "$ftime"
+> "$ftime"
 
 # collect information
-hosts=$(cat "$cpulist"|awk '/^[[:space:]]*#/{next;}/[^[:space:]]/{print $1}')
-#hosts+=" jacobi jacobi02 hermite legendre"
-source_if "$cpudir/m/switch/get_used@local.src"
-for host in $hosts; do
-  echo -n > "$cpudir/tmp/$host.stat"
-  rsh.dispatch "$host" "./cpugetdata.sh $host" 2>/dev/null | gawk \
-    -v fstat="$cpudir/tmp/$host.stat.part" \
-    -v fjobs="$cpudir/tmp/$host.jobs" \
-    '
-      /^==cpulook\.stat==$/{mode="stat";next;}
-      mode=="stat"{print > fstat;}
-      /^==cpulook\.jobs==$/{mode="jobs";next;}
-      mode=="jobs"{print > fjobs;}
-    ' && /bin/mv "$cpudir/tmp/$host.stat.part" "$cpudir/tmp/$host.stat" &>/dev/null &
-done
 
-check_updated () {
-  for host in $hosts; do
+function hosts.cpugetdata/check {
+  local host
+  for host in "${hosts[@]}"; do
     local fstat="$cpudir/tmp/$host.stat"
     test -s "$fstat" -a ! "$fstat" -ot "$ftime" || return 1
   done
   return 0
 }
 
-wait-until check_updated
+function hosts.cpugetdata {
+  [[ -s $cpudir/m/switch/get_used@local.src ]] && \
+    source "$cpudir/m/switch/get_used@local.src"
+
+  local line fields host
+  for line in "${cpulist_data[@]}"; do
+    fields=($line)
+    host=${fields[0]}
+
+    : > "$cpudir/tmp/$host.stat"
+    rsh.dispatch "$host" "./cpugetdata.sh $line" 2>/dev/null | gawk \
+      -v fstat="$cpudir/tmp/$host.stat.part" \
+      -v fjobs="$cpudir/tmp/$host.jobs" \
+      '
+      /^==cpulook\.stat==$/{mode="stat";next;}
+      mode=="stat"{print > fstat;}
+      /^==cpulook\.jobs==$/{mode="jobs";next;}
+      mode=="jobs"{print > fjobs;}
+    ' && /bin/mv "$cpudir/tmp/$host.stat.part" "$cpudir/tmp/$host.stat" &>/dev/null &
+  done
+
+  wait-until hosts.cpugetdata/check
+}
+
+hosts.cpugetdata
 
 # cpujobs
 create_cpujobs(){
   local first=1
   local cpu=1
-  for cpu in $hosts; do
+  for cpu in "${hosts[@]}"; do
     local fjobs="$cpudir/tmp/$cpu.jobs"
-    if test -s "$fjobs" -a ! "$fjobs" -ot "$ftime"; then
-      if test -n "$first"; then
+    if [[ -s $fjobs && ! $fjobs -ot $ftime ]]; then
+      if [[ $first ]]; then
         cat "$fjobs"
         first=
       else
@@ -233,14 +254,14 @@ create_cpujobs(){
       fi
     fi
   done
-  test -n "$first" || echo
+  [[ $first ]] || echo
 }
 
 # cpustat
 create_cpustat(){
   local cpu
   echo "HOST         C  I  NI : UTIL   LOAD   UC ___"
-  for cpu in $hosts; do
+  for cpu in "${hosts[@]}"; do
     if [[ "$cpudir/tmp/$cpu.stat" -ot "$ftime" || ! -s "$cpudir/tmp/$cpu.stat" ]]; then
       printf '%-12s  0  0 -- : ----.- ----.- -- \n' "$cpu"
     else
