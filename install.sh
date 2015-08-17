@@ -62,6 +62,10 @@ if [[ ${CPUDIR%/} != ${PWD%/} ]]; then
     fi
   done
 
+  create-dir "$CPUDIR/hosts"
+  update-script hosts/sh
+  update-script hosts/ssh
+
   # create m/switch
   if test ! -e "$CPUDIR/m/switch"; then
     if type bsub &>/dev/null; then

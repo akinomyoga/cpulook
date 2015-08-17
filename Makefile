@@ -4,19 +4,6 @@ all:
 dist:
 .PHONY: dist all install
 
-dist_files= \
- cpulook/cpulook \
- cpulook/cpugetdata.sh \
- cpulook/cpuseekd \
- cpulook/cpusub \
- cpulook/m \
- cpulook/cpugethost.sh \
- cpulook/cpulast \
- cpulook/cpups \
- cpulook/cputop \
- cpulook/cpulist.cfg \
- cpulook/readme.txt
-
 distexclude= \
 	--exclude=./cpulook/tmp \
 	--exclude=./cpulook/log \
@@ -26,10 +13,10 @@ distexclude= \
 	--exclude=./cpulook/*/backup \
 	--exclude=./cpulook/task.* \
 	--exclude=./cpulook/*.log \
-	--exclude=./cpulook/cpulist.cfg
+	--exclude=./cpulook/cpulist.cfg \
+	--exclude=./cpulook/.git
 
 dist: ext/echox
-#	cd .. && tar cavf cpulook.tar.xz $(dist_files)
 	cd .. && tar cavf cpulook-$$(date +%Y%m%d).tar.xz ./cpulook $(distexclude)
 
 ext/echox: $(MWGDIR)/echox
