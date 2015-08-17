@@ -107,7 +107,7 @@ function install-bin {
   local file="$1"
   local entity="$CPUDIR/$file"
   local target="$MWGDIR/bin/$file"
-  if test ! -e "$target"; then
+  if [[ ! -e $target ]]; then
     echo "cpulook-install: creating link '$target' -> '$entity'"
     ln -fs "$entity" "$target"
   fi
