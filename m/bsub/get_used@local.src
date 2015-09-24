@@ -1,11 +1,7 @@
 #!/bin/bash
 
-: ${cpudir:="$HOME/.mwg/share/cpulook"}
-
-tmpdir="$cpudir/tmp"
-if test ! -d "$tmpdir"; then
-  mkdir "$tmpdir"
-fi
+: ${cpudir:?'$cpudir is empty which should be set in cpulook.'}
+: ${tmpdir:?'$tmpdir is empty which should be set in cpulook.'}
 
 ftmp="$tmpdir/bsub.used.part"
 fdat="$tmpdir/bsub.used.dat"

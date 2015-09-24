@@ -8,6 +8,8 @@ function cpudir.initialize {
   cpudir="$_dir"
 }
 cpudir.initialize
+tmpdir="$HOME/.local/share/cpulook/tmp"
+[[ -d "$tmpdir" ]] || mkdir -p "$tmpdir"
 
 SUBTYPE="$cpudir/m/switch"
 

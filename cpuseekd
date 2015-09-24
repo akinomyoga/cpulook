@@ -11,6 +11,7 @@ function cpudir.initialize {
 }
 cpudir.initialize
 
+tmpdir="$HOME/.local/share/cpulook/tmp"
 #------------------------------------------------------------------------------
 # definitions
 
@@ -20,7 +21,7 @@ SUBTYPE="$cpudir/m/switch"
 cpulist="$cpudir/cpulist.cfg"
 list="$cpudir/task.txt"
 cook="$cpudir/task.eat"
-stat="$cpudir/tmp/cpustat.txt"
+stat="$tmpdir/cpustat.txt"
 seeklog="$cpudir/cpuseekd.log"
 
 # configuration

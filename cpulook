@@ -151,7 +151,7 @@ function cpudir.initialize {
 }
 cpudir.initialize
 
-tmpdir="$cpudir/tmp"
+tmpdir="$HOME/.local/share/cpulook/tmp"
 [[ -d $tmpdir ]] || mkdir -p "$tmpdir"
 
 cpustat="$tmpdir/cpustat.txt"
@@ -199,7 +199,7 @@ cpulist.load
 declare -a hosts
 hosts=("${cpulist_data[@]%%[$IFS]*}")
 
-ftime="$cpudir/tmp/cpulook.time"
+ftime="$tmpdir/cpulook.time"
 > "$ftime"
 
 # collect information
@@ -207,7 +207,7 @@ ftime="$cpudir/tmp/cpulook.time"
 function hosts.cpugetdata/check {
   local host
   for host in "${hosts[@]}"; do
-    local fstat="$cpudir/tmp/$host.stat"
+    local fstat="$tmpdir/$host.stat"
     test -s "$fstat" -a ! "$fstat" -ot "$ftime" || return 1
   done
   return 0
@@ -222,16 +222,16 @@ function hosts.cpugetdata {
     fields=($line)
     host=${fields[0]}
 
-    : > "$cpudir/tmp/$host.stat"
+    : > "$tmpdir/$host.stat"
     rsh.dispatch "$host" "./cpugetdata.sh $line" 2>/dev/null | gawk \
-      -v fstat="$cpudir/tmp/$host.stat.part" \
-      -v fjobs="$cpudir/tmp/$host.jobs" \
+      -v fstat="$tmpdir/$host.stat.part" \
+      -v fjobs="$tmpdir/$host.jobs" \
       '
       /^==cpulook\.stat==$/{mode="stat";next;}
       mode=="stat"{print > fstat;}
       /^==cpulook\.jobs==$/{mode="jobs";next;}
       mode=="jobs"{print > fjobs;}
-    ' && /bin/mv "$cpudir/tmp/$host.stat.part" "$cpudir/tmp/$host.stat" &>/dev/null &
+    ' && /bin/mv "$tmpdir/$host.stat.part" "$tmpdir/$host.stat" &>/dev/null &
   done
 
   wait-until hosts.cpugetdata/check
@@ -244,7 +244,7 @@ create_cpujobs(){
   local first=1
   local cpu=1
   for cpu in "${hosts[@]}"; do
-    local fjobs="$cpudir/tmp/$cpu.jobs"
+    local fjobs="$tmpdir/$cpu.jobs"
     if [[ -s $fjobs && ! $fjobs -ot $ftime ]]; then
       if [[ $first ]]; then
         cat "$fjobs"
@@ -262,10 +262,10 @@ create_cpustat(){
   local cpu
   echo "HOST         C  I  NI : UTIL   LOAD   UC ___"
   for cpu in "${hosts[@]}"; do
-    if [[ "$cpudir/tmp/$cpu.stat" -ot "$ftime" || ! -s "$cpudir/tmp/$cpu.stat" ]]; then
+    if [[ "$tmpdir/$cpu.stat" -ot "$ftime" || ! -s "$tmpdir/$cpu.stat" ]]; then
       printf '%-12s  0  0 -- : ----.- ----.- -- \n' "$cpu"
     else
-      echo "$(< "$cpudir/tmp/$cpu.stat")"
+      echo "$(< "$tmpdir/$cpu.stat")"
     fi
   done
 }

@@ -30,7 +30,8 @@
 #     * created. extracted out of `cpugetdata.sh'
 #
 
-: ${cpudir:="${MWGDIR:-$HOME/.mwg}/share/cpulook"}
+: ${cpudir:?'$cpudir is empty which should be set in cpugetdata.sh.'}
+: ${tmpdir:?'$tmpdir is empty which should be set in cpugetdata.sh.'}
 : ${host:=${HOSTNAME%%.*}}
 
 create_regex_cmdline() {
@@ -40,7 +41,7 @@ create_regex_cmdline() {
   echo -n "^$s*$f$f$f$f$f$f$f$f$f$w+$s(.+)$"
 }
 
-fjobs="$cpudir/tmp/$host.jobs"
+fjobs="$tmpdir/$host.jobs"
 
 result=($(ps uaxf | type="rsh.used" host="$host" fjobs="$fjobs" "$cpudir/cpujobs.awk"))
 

@@ -30,11 +30,12 @@
 #   * implementation using the `bjobs' command
 #
 
-: ${cpudir:="${MWGDIR:-$HOME/.mwg}/share/cpulook"}
+: ${cpudir:?'$cpudir is empty which should be set in cpugetdata.sh.'}
+: ${tmpdir:?'$tmpdir is empty which should be set in cpugetdata.sh.'}
 : ${host:=${HOSTNAME%%.*}}
 
 getUsedWithLocalBjobs(){
-  local fdat="$cpudir/tmp/bsub.used.dat"
+  local fdat="$tmpdir/bsub.used.dat"
   local result=($(awk '
     BEGIN{
       USER="'"$USER"'";
@@ -59,12 +60,12 @@ getUsedWithLocalBjobs(){
   upend=${result[2]}
   gpend=${result[3]}
 
-  # echo "user=$USER host=$host uuse=$uuse guse=$guse" >"$cpudir/tmp/bsub.$host.used"
+  # echo "user=$USER host=$host uuse=$uuse guse=$guse" >"$tmpdir/bsub.$host.used"
 }
 
 getUsedWithLocalBjobs
 
-# fjobs="$cpudir/tmp/$host.jobs"
+# fjobs="$tmpdir/$host.jobs"
 exec 5>&1
 fjobs="/dev/fd/5"
 echo "==cpulook.jobs==" >&5
@@ -73,7 +74,7 @@ result="$(ps uaxf | type="lava.used" host="$host" fjobs="$fjobs" "$cpudir/cpujob
 # # v20130504
 # uuse=$(ps ux|egrep '/bin/sh '"$HOME"'/\.lsbatch/[[:digit:]]|/usr/share/lava/.+/sbatchd$'|awk '$1=="'"$USER"'"'|wc -l)
 # get_guse() {
-#   local fdat="$cpudir/tmp/used@local.dat"
+#   local fdat="$tmpdir/used@local.dat"
 #   if test -s "$fdat"; then
 #     awk '$2=="'"$host"'"{print $1;}' "$fdat"
 #   else
