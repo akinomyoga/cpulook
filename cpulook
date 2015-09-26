@@ -172,17 +172,7 @@ function cpulist.load {
 #------------------------------------------------------------------------------
 # base
 
-function rsh.dispatch {
-  local host="$1"; shift
-  local command="$*"
-
-  local handler="$cpudir/hosts/$host.sh"
-  if [[ -s $handler ]]; then
-    source "$handler" rsh "$command" && return
-  fi
-
-  rsh "$host" "cd $cpudir; $command"
-}
+source "$cpudir/cpudefs.sh"
 
 #------------------------------------------------------------------------------
 # cpulook

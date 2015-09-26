@@ -11,6 +11,8 @@ function cpudir.initialize {
 }
 cpudir.initialize
 
+source "$cpudir/cpudefs.sh"
+
 host="$($cpudir/cpugethost.sh "$1")" || exit 1
 
-rsh "$host" last|less
+rsh.dispatch "$host" last|less
