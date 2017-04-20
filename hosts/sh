@@ -1,12 +1,12 @@
 #!/bin/bash
 # to source
 
-: ${remote_cpudir:=.mwg/share/cpulook}
+: ${local_cpudir:=$HOME/.mwg/share/cpulook}
 
 case "$1" in
 (rsh)
   shift
-  (cd "$remote_cpudir"; eval "$*")
+  (cd "$local_cpudir"; eval "$*")
   return 0 ;;
 (*)
   echo not supported operation >&2
