@@ -13,7 +13,7 @@ function create-dir {
 function update {
   local src="$1"
   local dst="${2:-$CPUDIR/$src}"
-  if test "$src" -nt "$dst"; then
+  if [[ $src -nt $dst ]]; then
     echo "cpulook-install: updating '$dst'..."
     cp -p "$src" "$dst"
   fi
@@ -57,9 +57,15 @@ if [[ ${CPUDIR%/} != ${PWD%/} ]]; then
   # update m/
   create-dir "$CPUDIR/m"
   for d in m/*; do
-    if test -d "$d"; then
+    if [[ -d "$d" ]]; then
       cp -rfp "$d" "$CPUDIR/m/"
     fi
+  done
+
+  # update hosts/
+  create-dir "$CPUDIR/hosts"
+  for f in hosts/*; do
+    update "$f" "$CPUDIR/$f"
   done
 
   # create m/switch
