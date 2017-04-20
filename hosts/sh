@@ -1,6 +1,8 @@
 #!/bin/bash
 # to source
 
+: ${cpudir:=$HOME/.mwg/share/cpulook}
+
 case "$1" in
 (rsh)
   shift

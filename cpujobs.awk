@@ -236,7 +236,19 @@ mode=="lava"{
 #------------------------------------------------------------------------------
 # その他(直接実行?)
 
-mode!="sh"&&$1!="root"&&get_ctime()>=180&&(get_ctime()>get_etime()*0.5||!($8~/^[TS]/)){
+mode=="sh"{
+  #dbg("sh1");
+  _cmdfld=extractCOMMAND($0);
+  #print "dbg: headIndex=" headIndex ", substr=(" substr(_cmdfld,0,headIndex) ")" > FJOBS
+  if(match(substr(_cmdfld,0,headIndex),/^([[:space:]]|\\_|\|)+$/)>0){
+    cumulate_values();
+    next;
+  }else{
+    output_jobline();
+  }
+}
+
+$1!="root"&&get_ctime()>=180&&(get_ctime()>get_etime()*0.5||!($8~/^[TS]/)){
   #dbg("sh0");
   output_jobline();
   mode="sh";
@@ -252,18 +264,6 @@ mode!="sh"&&$1!="root"&&get_ctime()>=180&&(get_ctime()>get_etime()*0.5||!($8~/^[
   headIndex=getHeadIndexOfCOMMAND(_cmdfld);
   cmd=substr(_cmdfld,headIndex);
   next;
-}
-
-mode=="sh"{
-  #dbg("sh1");
-  _cmdfld=extractCOMMAND($0);
-  #print "dbg: headIndex=" headIndex ", substr=(" substr(_cmdfld,0,headIndex) ")" > FJOBS
-  if(match(substr(_cmdfld,0,headIndex),/^([[:space:]]|\\_|\|)+$/)>0){
-    cumulate_values();
-    next;
-  }else{
-    output_jobline();
-  }
 }
 
 #------------------------------------------------------------------------------
