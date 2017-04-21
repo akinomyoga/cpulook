@@ -27,7 +27,7 @@ cpugetdata.read-options "$@"
 SUBTYPE="$cpudir/m/switch"
 
 if [[ $arg_cascade ]]; then
-  "$cpudir/cpulook" --cpugetdata --host-pattern="$arg_cascade"
+  "$cpudir/cpulook" 3 --cpugetdata --host-pattern="$arg_cascade"
   exit 0
 elif [[ ! $1 ]]; then
   exit 0

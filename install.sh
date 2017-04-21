@@ -81,6 +81,7 @@ if [[ ${CPUDIR%/} != ${PWD%/} ]]; then
   update cpujobs.awk
   update-script cpugetdata.sh
   update-script cpugethost.sh
+  update-script cpudefs.sh
   update-script cpukill
   update-script cpulast
   update-script cpulook
