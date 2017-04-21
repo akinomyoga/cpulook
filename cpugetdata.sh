@@ -3,22 +3,40 @@
 function cpudir.initialize {
   local _scr="$(readlink -f "$0" || /bin/readlink -f "$0" || echo "$0")"
   local _dir="${_scr%/*}"
-  test "x$_dir" = "x$_scr" && _dir=.
-  test -z "$_dir" && _dir=/
+  [[ $_dir == "$_scr" ]] && _dir=.
+  [[ $_dir ]] || _dir=/
   cpudir="$_dir"
 }
 cpudir.initialize
 tmpdir="$HOME/.local/share/cpulook/tmp"
-[[ -d "$tmpdir" ]] || mkdir -p "$tmpdir"
+[[ -d $tmpdir ]] || mkdir -p "$tmpdir"
+
+
+arg_cascade=
+function cpugetdata.read-options {
+  while (($#)); do
+    local arg=$1; shift
+    case "$arg" in
+    (--cascade=*)
+      arg_cascade=${arg#*=} ;;
+    esac
+  done
+}
+cpugetdata.read-options "$@"
 
 SUBTYPE="$cpudir/m/switch"
 
-[[ $1 ]] || exit 0
+if [[ $arg_cascade ]]; then
+  "$cpudir/cpulook" --cpugetdata --host-pattern="$arg_cascade"
+  exit 0
+elif [[ ! $1 ]]; then
+  exit 0
+fi
+
 host=$1
 
-# read cpulist.cfg
-
 # cpuinfo
+#   read cpulist.cfg
 function cpuinfo.load {
   if (($#>=5)); then
     cpuinfo=("$@")
@@ -41,10 +59,10 @@ ncor=${cpuinfo[1]}
 gmax=${cpuinfo[2]}
 nice=${cpuinfo[3]}
 umax=${cpuinfo[4]}
-test -z "$ncor" && ncor=0
-test -z "$gmax" && gmax=0
-test -z "$nice" && nice=0
-test -z "$umax" && umax="$gmax"
+[[ $ncor ]] || ncor=0
+[[ $gmax ]] || gmax=0
+[[ $nice ]] || nice=0
+[[ $umax ]] || umax="$gmax"
 
 # status
 util=$(top -b -n 1 | awk '/^ *[[:digit:]]/{a+=$9;}END{print a;}')
