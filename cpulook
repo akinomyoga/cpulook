@@ -1,30 +1,87 @@
 #!/bin/bash
 
+function cpudir.initialize {
+  local _scr="$(readlink -f "$0" || /bin/readlink -f "$0" || echo "$0")"
+  local _dir="${_scr%/*}"
+  [[ $_dir == "$_scr" ]] && _dir=.
+  [[ $_dir ]] || _dir=/
+  cpudir="$_dir"
+}
+cpudir.initialize
+tmpdir="$HOME/.local/share/cpulook/tmp"
+[[ -d $tmpdir ]] || mkdir -p "$tmpdir"
+
+arg_timeout=
+arg_host_pattern=
+flag_cpugetdata=
+flag_help=
+function cpulook/read_argument {
+  while (($#)); do
+    local arg=$1; shift
+    case "$arg" in
+    (--cpugetdata)
+      flag_cpugetdata=1 ;;
+    (--help)
+      flag_help=1 ;;
+    (--host-pattern=*)
+      arg_host_pattern=${arg#*=} ;;
+    (*)
+      if [[ ! $arg_timeout ]]; then
+        arg_timeout=$arg
+      else
+        echo "cpulook (arguments): timeout is specified more than once" >&2
+        return 1
+      fi ;;
+    esac
+  done
+}
+
+cpulook/read_argument "$@"
+
+if [[ $flag_help ]]; then
+  cat <<EOF
+cpulook [options] [timeout]
+
+OPTIONS
+
+  --help
+    Show help
+
+  --cpugetdata
+    Output in the cpugetdata format. For internal usage.
+
+  --host-pattern=HOSTNAMES
+    Comma separated list of hostname to check.
+
+TIMEOUT
+
+  Timeout in seconds. Fractional numbers can be specified.
+
+EOF
+  exit
+fi
+
 #------------------------------------------------------------------------------
 # utilities
 
-fileage () {
-  local file="$1"
-  if test -e "$file"; then
-    echo -n $(($(date '+%s')-$(date '+%s' -r "$file")))
+function get_fileage {
+  local var=$1 file=$2
+  if [[ -e $file ]]; then
+    eval "$var=$(($(date '+%s')-$(date '+%s' -r "$file")))"
   else
-    echo -n 0
+    eval "$var=-1"
   fi
 }
 
+timeout="${arg_timeout:-5}"
+## @var[in] timeout
 function wait-until {
   local condcmd="$1"
   local it itN
-  itN=$(:|awk 'BEGIN{print int('"$timeout/0.2"')}')
-  for((it=0;it<itN;it++));do
-    if [[ -t 2 ]]; then
-      case $((it%4)) in
-      0) echo -n 'waiting ...|' >&2 ;;
-      1) echo -n 'waiting .../' >&2 ;;
-      2) echo -n 'waiting ...-' >&2 ;;
-      3) echo -n 'waiting ...\' >&2 ;;
-      esac
-    fi
+  itN=$(:|awk 'BEGIN{print int('"${timeout:-5}/0.2"')}')
+  local spin='|/-\'
+  for ((it=0;it<itN;it++)); do
+    [[ -t 2 ]] && printf 'waiting ...%s\r' "${spin:it%${#spin}:1}" >&2
     sleep 0.2
     "$condcmd" && break
   done
@@ -32,7 +89,12 @@ function wait-until {
 
 #------------------------------------------------------------------------------
 
-function cpustat.view {
+function cpustat.view/cpugetdata {
+  echo ==cpulook.stat==
+  sed 1d
+}
+
+function cpustat.view/color {
   if local tput_colors=$(tput colors 2>&1) && ((tput_colors>=256)); then
     local sgr_mine=$'\e[97;48;5;27m';
     local sgr_other=$'\e[48;5;20m';
@@ -110,28 +172,47 @@ function cpustat.view {
   '
 }
 
-function cpujobs.view {
-  if test -t 1 -a -n "$COLUMNS"; then
-    local cols=$((COLUMNS>80?COLUMNS:80))
-    local s61='                                                             '
-    awk -v s61="$s61" -v cols="$cols" '
-     BEGIN{
-       ioffset=40;
-       indent=substr(s61,1,ioffset);
-     }
+function cpustat.view {
+  if [[ $flag_cpugetdata ]]; then
+    cpustat.view/cpugetdata
+  else
+    cpustat.view/color
+  fi
+}
 
-     length($0)<cols{print;next}
-     {
-       print substr($0,1,cols-1);
-       rest=substr($0,cols);
-       rlen=length(rest);
-       width=cols-1-ioffset;
-       if(rlen<width){
-         print substr(s61,1,cols-1-rlen) rest;
-       }else while(rlen>0){
-         print indent substr(rest,1,width);
-         rest=substr(rest,width+1);
-         rlen=length(rest);}}'
+function cpujobs.view/cpugetdata {
+  echo ==cpulook.jobs==
+  sed '1d;/^$/d'
+}
+
+function cpujobs.view/fold {
+  local -i cols=$1
+  local s61='                                                             '
+  awk -v s61="$s61" -v cols="$cols" '
+   BEGIN{
+     ioffset=40;
+     indent=substr(s61,1,ioffset);
+   }
+
+   length($0)<cols{print;next}
+   {
+     print substr($0,1,cols-1);
+     rest=substr($0,cols);
+     rlen=length(rest);
+     width=cols-1-ioffset;
+     if(rlen<width){
+       print substr(s61,1,cols-1-rlen) rest;
+     }else while(rlen>0){
+       print indent substr(rest,1,width);
+       rest=substr(rest,width+1);
+       rlen=length(rest);}}'
+}
+
+function cpujobs.view {
+  if [[ $flag_cpugetdata ]]; then
+    cpujobs.view/cpugetdata
+  elif [[ -t 1 && $COLUMNS ]]; then
+    cpujobs.view/fold $((COLUMNS>80?COLUMNS:80))
   else
     cat
   fi
@@ -140,25 +221,9 @@ function cpujobs.view {
 #------------------------------------------------------------------------------
 # settings
 
-function cpudir.initialize {
-  # cpudir="${MWGDIR:-$HOME/.mwg}/share/cpulook"
-  # test -d "$cpudir" && return
-  local _scr="$(readlink -f "$0" || /bin/readlink -f "$0" || echo "$0")"
-  local _dir="${_scr%/*}"
-  test "x$_dir" = "x$_scr" && _dir=.
-  test -z "$_dir" && _dir=/
-  cpudir="$_dir"
-}
-cpudir.initialize
-
-tmpdir="$HOME/.local/share/cpulook/tmp"
-[[ -d $tmpdir ]] || mkdir -p "$tmpdir"
-
 cpustat="$tmpdir/cpustat.txt"
 cpujobs="$tmpdir/cpujobs.txt"
 cpulist="$cpudir/cpulist.cfg"
-
-timeout="${1:-5}"
 
 function cpulist.load {
   cpulist_data=()
@@ -169,6 +234,7 @@ function cpulist.load {
   done < "$cpulist"
 }
 
+
 #------------------------------------------------------------------------------
 # base
 
@@ -178,19 +244,40 @@ source "$cpudir/cpudefs.sh"
 # cpulook
 
 # show cache
-if [[ -e $cpustat && $(fileage "$cpustat") -lt 10 ]]; then
-  test -s "$cpujobs" && cpujobs.view < "$cpujobs"
+get_fileage age "$cpustat"
+if ((0<=age&&age<10)); then
+  [[ -s $cpujobs ]] && cpujobs.view < "$cpujobs"
   cpustat.view < "$cpustat"
   exit 0
 fi
 
 # load cpulist.cfg
 cpulist.load
-declare -a hosts
-hosts=("${cpulist_data[@]%%[$IFS]*}")
+
+hosts=()
+function hosts.initialize {
+  hosts=("${cpulist_data[@]%%[$IFS]*}")
+
+  # filter by arg_host_pattern
+  if [[ $arg_host_pattern ]]; then
+    IFS=, eval 'local -a patterns=($arg_host_pattern)'
+    local -a hosts_filtered=()
+    local host pattern
+    for host in "${hosts[@]}"; do
+      for pattern in "${patterns[@]}"; do
+        if [[ $host == $pattern ]]; then
+          hosts_filtered[${#hosts_filtered[@]}]=$host
+          break
+        fi
+      done
+    done
+    hosts=("${hosts_filtered[@]}")
+  fi
+}
+hosts.initialize
 
 ftime="$tmpdir/cpulook.time"
-> "$ftime"
+: > "$ftime"
 
 # collect information
 
@@ -198,7 +285,7 @@ function hosts.cpugetdata/check {
   local host
   for host in "${hosts[@]}"; do
     local fstat="$tmpdir/$host.stat"
-    test -s "$fstat" -a ! "$fstat" -ot "$ftime" || return 1
+    [[ -s $fstat && ! ( $fstat -ot $ftime ) ]] || return 1
   done
   return 0
 }
@@ -252,7 +339,7 @@ create_cpustat(){
   local cpu
   echo "HOST         C  I  NI : UTIL   LOAD   UC ___"
   for cpu in "${hosts[@]}"; do
-    if [[ "$tmpdir/$cpu.stat" -ot "$ftime" || ! -s "$tmpdir/$cpu.stat" ]]; then
+    if [[ $tmpdir/$cpu.stat -ot $ftime || ! -s $tmpdir/$cpu.stat ]]; then
       printf '%-12s  0  0 -- : ----.- ----.- -- \n' "$cpu"
     else
       echo "$(< "$tmpdir/$cpu.stat")"
@@ -260,5 +347,10 @@ create_cpustat(){
   done
 }
 
-create_cpujobs | tee "$cpujobs" | cpujobs.view
-create_cpustat | tee "$cpustat" | cpustat.view
+if [[ $arg_host_pattern ]]; then
+  create_cpujobs | cpujobs.view
+  create_cpustat | cpustat.view
+else
+  create_cpujobs | tee "$cpujobs" | cpujobs.view
+  create_cpustat | tee "$cpustat" | cpustat.view
+fi
