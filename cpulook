@@ -87,6 +87,16 @@ function wait-until {
   done
 }
 
+## @var[out] row
+## @var[out] col
+function DSR6 {
+  local timeout=1
+  ((BASH_VERSINFO>=4)) && timeout=0.2 # 小数は bash-4.0 以上
+  [[ -t 6 ]] &&
+    IFS=\; read -sdR -p $'\e[6n' -t "$timeout" row col &&
+    row="${row#*[}"
+} <&6 >&6
+
 #------------------------------------------------------------------------------
 
 function cpustat.view/cpugetdata {
@@ -103,34 +113,29 @@ function cpustat.view/color {
     local sgr_other=$'\e[44m';
   fi
 
+  local row col block_char_width=0
+  printf '\r\xE2\x96\x88'
+  DSR6 && ((block_char_width=col-1))
+  printf '\r\e[K'
   gawk \
     -v sgr_mine="$sgr_mine" \
     -v sgr_other="$sgr_other" \
-    -v COLUMNS="$COLUMNS" '
-    function repeat(text,n, _ret){
-      _ret="";
-      while(n>0){
-        if(and(n,1)==1)_ret=_ret text;
-        text=text text;
-        n=rshift(n,1);
-      }
-      return _ret;
-    }
-
+    -v COLUMNS="$COLUMNS" \
+    -v tput_colors="$tput_colors" \
+    -v block_char_width="$block_char_width" '
+    #
+    # color utilities
+    #
     BEGIN {
-      BLOCK[9] = "#";
-      BLOCK[8] = "\xE2\x96\x88";
-      BLOCK[7] = "\xE2\x96\x89";
-      BLOCK[6] = "\xE2\x96\x8a";
-      BLOCK[5] = "\xE2\x96\x8b";
-      BLOCK[4] = "\xE2\x96\x8c";
-      BLOCK[3] = "\xE2\x96\x8d";
-      BLOCK[2] = "\xE2\x96\x8e";
-      BLOCK[1] = "\xE2\x96\x8f";
-      BLOCK[0] = " ";
-      COLOR_UUSE = 27;
-      COLOR_UTIL = 20;
-      COLOR_FREE = 7;
+      if (tput_colors >= 256) {
+        COLOR_UUSE = 27;
+        COLOR_UTIL = 20;
+        COLOR_FREE = 7;
+      } else {
+        COLOR_UUSE = 2;
+        COLOR_UTIL = 4;
+        COLOR_FREE = 7;
+      }
     }
     function sgrbg(color) {
       color = int(color);
@@ -146,6 +151,17 @@ function cpustat.view/color {
       if (color < 16) return "\x1b[9" (color - 8) "m";
       return "\x1b[38;5;" color "m";
     }
+
+    function repeat(text,n, _ret){
+      _ret="";
+      while(n>0){
+        if(and(n,1)==1)_ret=_ret text;
+        text=text text;
+        n=rshift(n,1);
+      }
+      return _ret;
+    }
+
     function abs(value) {
       return value < 0? -value: value;
     }
@@ -158,10 +174,31 @@ function cpustat.view/color {
     function clamp(value, a, b) {
       return value < a? a: value > b? b: value;
     }
+    function ceil(value, _ivalue) {
+      _ivalue = int(value);
+      return _ivalue == value || value < 0? _ivalue: _ivalue + 1;
+    }
 
-    function progress3_render(core_width, prog, prog_lcolor, prog_rcolor, _iN, _nfold, _ret, _curfg, _curbg, _i, _bwidth, _newfg, _newbg) {
+    #
+    # progress3
+    #
+    BEGIN {
+      BLOCK[9] = "#";
+      BLOCK[8] = "\xE2\x96\x88";
+      BLOCK[7] = "\xE2\x96\x89";
+      BLOCK[6] = "\xE2\x96\x8a";
+      BLOCK[5] = "\xE2\x96\x8b";
+      BLOCK[4] = "\xE2\x96\x8c";
+      BLOCK[3] = "\xE2\x96\x8d";
+      BLOCK[2] = "\xE2\x96\x8e";
+      BLOCK[1] = "\xE2\x96\x8f";
+      BLOCK[0] = " ";
+    }
+    function progress3_render(core_width, prog, prog_lcolor, prog_rcolor, _iN, _nfold, _ret, _curfg, _curbg, _i, _iend, _bwidth, _newfg, _newbg) {
       _iN = core_width * ncor;
-      _nfold = _iN;
+      _nfold = int(64 / core_width) * core_width;
+      #_nfold = core_width * ceil(ncor / ceil(ncor / int(64 / core_width))); # (1行の core 数を揃える場合)
+
       _ret = "";
       _curfg = -1;
       _curbg = -1;
@@ -169,20 +206,22 @@ function cpustat.view/color {
         _bwidth = prog[_i];
         _newfg = prog_lcolor[_i];
         _newbg = _bwidth == 8? -1: prog_rcolor[_i];
+        _iend = _i + 1;
         if (_curfg != _newfg) {_ret = _ret sgrfg(_newfg); _curfg = _newfg;}
         if (_curbg != _newbg) {_ret = _ret sgrbg(_newbg); _curbg = _newbg;}
-        if (_bwidth == 8 && (_i + 1) % core_width == 0 && (_i + 1) % _nfold != 0) _bwidth = 7;
+        if (_bwidth == 8 && _iend % core_width == 0 && _iend % _nfold != 0) _bwidth = 7;
         _ret = _ret BLOCK[_bwidth];
-        if ((_i + 1) % _nfold == 0 && _i + 1) != 0) {
+        if (_iend % _nfold == 0 && _iend != _iN) {
           _ret = _ret "\x1b[m\n" repeat(" ", CPUBAR_OFFSET);
+          _curfg = _curbg = -1;
         }
       }
       _ret = _ret "\x1b[m";
       return _ret;
     }
-
     function create_progress3(core_width, util1, util8, uuse1, uuse8, load1, _i, _iN, _prog, _prog_lcolor, _prog_rcolor) {
-      core_width = clamp(int(clamp(WIDTH, 16, 64) / ncor), 2, 4);
+      core_width = 4;
+      #core_width = clamp(int(clamp(WIDTH, 16, 64) / ncor), 2, 4); # (core の表示幅を自動的に変える場合)
 
       util8 = int(util * core_width * 8 + 0.5);
       util1 = int(util8 / 8);
@@ -286,8 +325,14 @@ function cpustat.view/color {
       ncor=data[1];
       if(ncor+0==0)
         print
-      else
-        print substr($0,1,length($0)-length($9)) create_progress3();
+      else {
+        cpustat = substr($0,1,length($0)-length($9));
+        if (block_char_width == 1)
+          cpubar = create_progress3()
+        else
+          cpubar = create_progress2();
+        print cpustat cpubar;
+      }
     }
   '
 }
@@ -362,6 +407,8 @@ source "$cpudir/cpudefs.sh"
 
 #------------------------------------------------------------------------------
 # cpulook
+
+exec 6<> /dev/tty
 
 # show cache
 get_fileage age "$cpustat"
