@@ -73,15 +73,15 @@ function get_fileage {
   fi
 }
 
-timeout="${arg_timeout:-5}"
+timeout="${arg_timeout:-10}"
 ## @var[in] timeout
 function wait-until {
   local condcmd="$1"
-  local it itN
+  local wait_status= it itN
   itN=$(:|awk 'BEGIN{print int('"${timeout:-5}/0.2"')}')
   local spin='|/-\'
   for ((it=0;it<itN;it++)); do
-    [[ -t 2 ]] && printf 'waiting ...%s\r' "${spin:it%${#spin}:1}" >&2
+    [[ -t 2 ]] && printf 'waiting %s...%s\r' "${wait_status:+($wait_status) }" "${spin:it%${#spin}:1}" >&2
     sleep 0.2
     "$condcmd" && break
   done
@@ -282,12 +282,14 @@ ftime="$tmpdir/cpulook.time"
 # collect information
 
 function hosts.cpugetdata/check {
-  local host
+  local host count=0 N=${#hosts[@]}
   for host in "${hosts[@]}"; do
     local fstat="$tmpdir/$host.stat"
-    [[ -s $fstat && ! ( $fstat -ot $ftime ) ]] || return 1
+    [[ -s $fstat && ! ( $fstat -ot $ftime ) ]] && let count++
   done
-  return 0
+
+  wait_status="$count/$N"
+  ((count==N))
 }
 
 function hosts.cpugetdata {
