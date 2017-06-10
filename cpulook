@@ -117,25 +117,143 @@ function cpustat.view/color {
       return _ret;
     }
 
-    function create_progress2(_i,_iW,_iN,_prog,_progress){
-      _iN=WIDTH-1;
+    BEGIN {
+      BLOCK[9] = "#";
+      BLOCK[8] = "\xE2\x96\x88";
+      BLOCK[7] = "\xE2\x96\x89";
+      BLOCK[6] = "\xE2\x96\x8a";
+      BLOCK[5] = "\xE2\x96\x8b";
+      BLOCK[4] = "\xE2\x96\x8c";
+      BLOCK[3] = "\xE2\x96\x8d";
+      BLOCK[2] = "\xE2\x96\x8e";
+      BLOCK[1] = "\xE2\x96\x8f";
+      BLOCK[0] = " ";
+      COLOR_UUSE = 27;
+      COLOR_UTIL = 20;
+      COLOR_FREE = 7;
+    }
+    function sgrbg(color) {
+      color = int(color);
+      if (color < 0) return "\x1b[49m";
+      if (color < 8) return "\x1b[4" color "m";
+      if (color < 16) return "\x1b[10" (color - 8) "m";
+      return "\x1b[48;5;" color "m";
+    }
+    function sgrfg(color) {
+      color = int(color);
+      if (color < 0) return "\x1b[39m";
+      if (color < 8) return "\x1b[3" color "m";
+      if (color < 16) return "\x1b[9" (color - 8) "m";
+      return "\x1b[38;5;" color "m";
+    }
+    function abs(value) {
+      return value < 0? -value: value;
+    }
+    ## @fn nearest(value, a, b)
+    ##   a と b で value に近い方を選択する。
+    ##   両方が同じ距離にある場合には a を使用する。
+    function nearest(value, a, b) {
+      return abs(value - a) <= abs(value - b)? a: b;
+    }
+    function clamp(value, a, b) {
+      return value < a? a: value > b? b: value;
+    }
+
+    function progress3_render(core_width, prog, prog_lcolor, prog_rcolor, _iN, _nfold, _ret, _curfg, _curbg, _i, _bwidth, _newfg, _newbg) {
+      _iN = core_width * ncor;
+      _nfold = _iN;
+      _ret = "";
+      _curfg = -1;
+      _curbg = -1;
+      for (_i = 0; _i < _iN; _i++) {
+        _bwidth = prog[_i];
+        _newfg = prog_lcolor[_i];
+        _newbg = _bwidth == 8? -1: prog_rcolor[_i];
+        if (_curfg != _newfg) {_ret = _ret sgrfg(_newfg); _curfg = _newfg;}
+        if (_curbg != _newbg) {_ret = _ret sgrbg(_newbg); _curbg = _newbg;}
+        if (_bwidth == 8 && (_i + 1) % core_width == 0 && (_i + 1) % _nfold != 0) _bwidth = 7;
+        _ret = _ret BLOCK[_bwidth];
+        if ((_i + 1) % _nfold == 0 && _i + 1) != 0) {
+          _ret = _ret "\x1b[m\n" repeat(" ", CPUBAR_OFFSET);
+        }
+      }
+      _ret = _ret "\x1b[m";
+      return _ret;
+    }
+
+    function create_progress3(core_width, util1, util8, uuse1, uuse8, load1, _i, _iN, _prog, _prog_lcolor, _prog_rcolor) {
+      core_width = clamp(int(clamp(WIDTH, 16, 64) / ncor), 2, 4);
+
+      util8 = int(util * core_width * 8 + 0.5);
+      util1 = int(util8 / 8);
+      uuse8 = int(uuse * core_width * 8 + 0.5);
+      if (uuse8 > util1 * 8);
+        uuse8 = nearest(uuse8, util8, util1 * 8);
+      uuse1 = int(uuse8 / 8);
+
+      load1 = int(load * core_width + 0.5);
+
+      _iN = core_width * ncor;
+      for (_i = 0; _i < uuse1; _i++) {
+        _prog[_i] = 8;
+        _prog_lcolor[_i] = COLOR_UUSE;
+      }
+      if (uuse8 % 8) {
+        _prog[_i] = uuse8 % 8;
+        _prog_lcolor[_i] = COLOR_UUSE;
+        _prog_rcolor[_i] = uuse8 < util8? COLOR_UTIL: COLOR_FREE;
+        _i++;
+      }
+      for (; _i < util1; _i++) {
+        _prog[_i] = 8;
+        _prog_lcolor[_i] = COLOR_UTIL;
+      }
+      if (util8 % 8) {
+        _prog[_i] = util8 % 8;
+        _prog_lcolor[_i] = COLOR_UTIL;
+        _prog_rcolor[_i] = COLOR_FREE;
+        _i++;
+      }
+      for (; _i < _iN; _i++) {
+        _prog[_i] = 8;
+        _prog_lcolor[_i] = COLOR_FREE;
+      }
+
+      if (load1 > util1) {
+        if (load1 >= _iN) {
+          _tail = "\x1b[" repeat("#", clamp(int(load - ncor + 0.5), 1, 20)) "\x1b[m";
+        } else {
+          _prog[load1] = 9;
+          _prog_rcolor[load1] = _prog_lcolor[load1];
+          _prog_lcolor[load1] = 9;
+          _tail = "";
+        }
+      }
+
+      return progress3_render(core_width, _prog, _prog_lcolor, _prog_rcolor) _tail;
+    }
+
+    function create_progress2(_width, _i,_iW,_iN,_prog,_progress){
+      _width = WIDTH;
+      if (_width > 64) _width = 64;
+      _iN=_width-1;
       for(_i=0;_i<_iN;_i++)_prog[_i]="_";
-      for(_i=1;_i<ncor;_i++)_prog[int(WIDTH*_i/ncor-1)]="|";
+      for(_i=1;_i<ncor;_i++)_prog[int(_width*_i/ncor-1)]="|";
 
       # bar: load average (EMA)
-      _iW=int(WIDTH*load/ncor+0.5);
+      _iW=int(_width*load/ncor+0.5);
       if(_iW<_iN)
         _prog[_iW]="\x1b[91m#\x1b[97m"
       else
         _prog[_iN]="\x1b[91m" repeat("#",1+int(load-ncor+0.5)) "\x1b[m"
 
       # white: not used
-      _iW=int(WIDTH*util/ncor+0.5);
+      _iW=int(_width*util/ncor+0.5);
       if(_iW<_iN)_prog[_iW]="\x1b[47m" _prog[_iW]
 
       # blue: used by other people
       if(uuse<util){
-        _iW=int(WIDTH*uuse/ncor+0.5);
+        _iW=int(_width*uuse/ncor+0.5);
         if(_iW<_iN)_prog[_iW]=sgr_other _prog[_iW]
       }
 
@@ -147,13 +265,15 @@ function cpustat.view/color {
     }
 
     BEGIN{
-      WIDTH=COLUMNS-41;
-      if(WIDTH>64)WIDTH=64;
+      CPUBAR_OFFSET = 41;
+      WIDTH = COLUMNS - 41;
     }
 
-    $9=="___"{
-      progress="#CPU" repeat("_",WIDTH-5);
-      print substr($0,1,length($0)-length($9)) progress;
+    $9 == "___" {
+      CPUBAR_OFFSET = length($0) - length($9);
+      WIDTH = COLUMNS - CPUBAR_OFFSET;
+      progress = "#CPU" repeat("_", clamp(WIDTH, 16, 64) - 5);
+      print substr($0, 1, CPUBAR_OFFSET) progress;
       next;
     }
 
@@ -167,7 +287,7 @@ function cpustat.view/color {
       if(ncor+0==0)
         print
       else
-        print substr($0,1,length($0)-length($9)) create_progress2();
+        print substr($0,1,length($0)-length($9)) create_progress3();
     }
   '
 }
