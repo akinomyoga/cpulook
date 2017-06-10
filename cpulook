@@ -189,8 +189,10 @@ function cpustat.view/color {
     }
     function progress3_render(core_width, prog, prog_lcolor, prog_rcolor, _iN, _nfold, _ret, _curfg, _curbg, _i, _iend, _bwidth, _newfg, _newbg) {
       _iN = core_width * ncor;
-      _nfold = int(64 / core_width) * core_width;
-      #_nfold = core_width * ceil(ncor / ceil(ncor / int(64 / core_width))); # (1行の core 数を揃える場合)
+      if (CPUBAR_FOLD_BALANCED)
+        _nfold = core_width * ceil(ncor / ceil(ncor / int(CPUBAR_WIDTH / core_width)));
+      else
+        _nfold = int(CPUBAR_WIDTH / core_width) * core_width;
 
       _ret = "";
       _curfg = -1;
@@ -213,8 +215,10 @@ function cpustat.view/color {
       return _ret;
     }
     function create_progress3(core_width, util1, util8, uuse1, uuse8, load1, _i, _iN, _prog, _prog_lcolor, _prog_rcolor) {
-      core_width = 4;
-      #core_width = clamp(int(clamp(WIDTH, 16, 64) / ncor), 2, 4); # (core の表示幅を自動的に変える場合)
+      if (CPUBAR_CORE_STRETCH)
+        core_width = clamp(int(clamp(WIDTH, 16, CPUBAR_WIDTH) / ncor), 2, 4);
+      else
+        core_width = 4;
 
       util8 = int(util * core_width * 8 + 0.5);
       util1 = int(util8 / 8);
@@ -266,8 +270,7 @@ function cpustat.view/color {
     }
 
     function create_progress2(_width, _i,_iW,_iN,_prog,_progress){
-      _width = WIDTH;
-      if (_width > 64) _width = 64;
+      _width = clamp(WIDTH, 16, CPUBAR_WIDTH);
       _iN=_width-1;
       for(_i=0;_i<_iN;_i++)_prog[_i]="_";
       for(_i=1;_i<ncor;_i++)_prog[int(_width*_i/ncor-1)]="|";
@@ -297,14 +300,22 @@ function cpustat.view/color {
     }
 
     BEGIN{
+      CPUBAR_WIDTH = 64;
       CPUBAR_OFFSET = 41;
-      WIDTH = COLUMNS - 41;
+      WIDTH = COLUMNS - CPUBAR_OFFSET;
+
+      # options for progress3
+      if (block_char_width == 1) {
+        CPUBAR_WIDTH = 32;
+        CPUBAR_CORE_STRETCH = 0; # core の表示幅を自動的に変えるかどうか
+        CPUBAR_FOLD_BALANCED = 0; # 1行の core 数を揃えるかどうか
+      }
     }
 
     $9 == "___" {
       CPUBAR_OFFSET = length($0) - length($9);
       WIDTH = COLUMNS - CPUBAR_OFFSET;
-      progress = "#CPU" repeat("_", clamp(WIDTH, 16, 64) - 5);
+      progress = "#CPU" repeat("_", clamp(WIDTH, 16, CPUBAR_WIDTH) - 5);
       print substr($0, 1, CPUBAR_OFFSET) progress;
       next;
     }
