@@ -105,21 +105,14 @@ function cpustat.view/cpugetdata {
 }
 
 function cpustat.view/color {
-  if local tput_colors=$(tput colors 2>&1) && ((tput_colors>=256)); then
-    local sgr_mine=$'\e[97;48;5;27m';
-    local sgr_other=$'\e[48;5;20m';
-  else
-    local sgr_mine=$'\e[97;42m';
-    local sgr_other=$'\e[44m';
-  fi
+  local tput_colors=$(tput colors 2>&1)
 
   local row col block_char_width=0
   printf '\r\xE2\x96\x88'
   DSR6 && ((block_char_width=col-1))
   printf '\r\e[K'
+
   gawk \
-    -v sgr_mine="$sgr_mine" \
-    -v sgr_other="$sgr_other" \
     -v COLUMNS="$COLUMNS" \
     -v tput_colors="$tput_colors" \
     -v block_char_width="$block_char_width" '
@@ -293,12 +286,12 @@ function cpustat.view/color {
       # blue: used by other people
       if(uuse<util){
         _iW=int(_width*uuse/ncor+0.5);
-        if(_iW<_iN)_prog[_iW]=sgr_other _prog[_iW]
+        if (_iW < _iN) _prog[_iW] = sgrbg(COLOR_UTIL) _prog[_iW]
       }
 
       _progress="";
       for(_i=0;_i<_iN;_i++)_progress=_progress _prog[_i];
-      _progress=sgr_mine _progress "\x1b[m";
+      _progress = sgrfg(15) sgrbg(COLOR_UUSE) _progress "\x1b[m";
       if(_prog[_iN]!="")_progress=_progress _prog[_iN];
       return _progress;
     }
