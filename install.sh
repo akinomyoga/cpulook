@@ -94,6 +94,16 @@ if [[ ${CPUDIR%/} != ${PWD%/} ]]; then
   if [[ ! -s $CPUDIR/cpulist.cfg ]]; then
     echo "cpulook-install: creating default '$CPUDIR/cpulist.cfg'."
     cp -f "$CPUDIR/cpulist-default.cfg" "$CPUDIR/cpulist.cfg"
+    local nproc=$(
+      if type nproc &>/dev/null; then
+        nproc 2>/dev/null
+      elif [[ -f /proc/cpuinfo ]]; then
+        grep -c ^processor /proc/cpuinfo
+      else
+        echo 1
+      fi)
+    ((nproc=nproc<=0?1:nproc))
+    echo "${HOSTNAME##*.} $nproc $nproc 20 $nproc" >> "$CPUDIR/cpulist.cfg"
     echo "cpulook-install: [1mplease edit '$CPUDIR/cpulist.cfg'.[m"
   fi
 fi
