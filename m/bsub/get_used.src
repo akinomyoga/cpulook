@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # requirement:
 #   set shell variables `uuse' and `guse'

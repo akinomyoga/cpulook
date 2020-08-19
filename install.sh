@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 : ${MWGDIR:="$HOME/.mwg"}
 : ${CPUDIR:="$MWGDIR/share/cpulook"}

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 rsh_kill_submit(){
   local host="${1%:*}"

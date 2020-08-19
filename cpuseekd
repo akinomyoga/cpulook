@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 function cpudir.initialize {
   # cpudir=${MWGDIR:-$HOME/.mwg}/share/cpulook

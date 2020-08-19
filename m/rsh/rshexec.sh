@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 function cpudir.initialize {
   local _scr="$(test -h "$0" && { readlink -f "$0" || /bin/readlink -f "$0"; } || echo "$0")"
