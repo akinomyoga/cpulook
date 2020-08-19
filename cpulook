@@ -1,14 +1,14 @@
 #!/bin/bash
 
 function cpudir.initialize {
-  local _scr="$(readlink -f "$0" || /bin/readlink -f "$0" || echo "$0")"
-  local _dir="${_scr%/*}"
+  local _scr=$(readlink -f "$0" || /bin/readlink -f "$0" || echo "$0")
+  local _dir=${_scr%/*}
   [[ $_dir == "$_scr" ]] && _dir=.
   [[ $_dir ]] || _dir=/
-  cpudir="$_dir"
+  cpudir=$_dir
 }
 cpudir.initialize
-tmpdir="$HOME/.local/share/cpulook/tmp"
+tmpdir=$HOME/.local/share/cpulook/tmp
 [[ -d $tmpdir ]] || mkdir -p "$tmpdir"
 
 arg_timeout=
@@ -76,7 +76,7 @@ function get_fileage {
 timeout="${arg_timeout:-10}"
 ## @var[in] timeout
 function wait-until {
-  local condcmd="$1"
+  local condcmd=$1
   local wait_status= it itN
   itN=$(:|awk 'BEGIN{print int('"${timeout:-5}/0.2"')}')
   local spin='|/-\'
@@ -447,7 +447,7 @@ function hosts.initialize {
 }
 hosts.initialize
 
-ftime="$tmpdir/cpulook.time"
+ftime=$tmpdir/cpulook.time
 : > "$ftime"
 
 # collect information
@@ -459,7 +459,7 @@ function hosts.cpugetdata/check {
     [[ -s $fstat && ! ( $fstat -ot $ftime ) ]] && let count++
   done
 
-  wait_status="$count/$N"
+  wait_status=$count/$N
   ((count==N))
 }
 

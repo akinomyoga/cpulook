@@ -1,17 +1,17 @@
 #!/bin/bash
 
 function cpudir.initialize {
-  local _scr="$(readlink -f "$0" || /bin/readlink -f "$0" || echo "$0")"
-  local _dir="${_scr%/*}"
-  test "x$_dir" = "x$_scr" && _dir=.
-  test -z "$_dir" && _dir=/
-  cpudir="$_dir"
+  local _scr=$(readlink -f "$0" || /bin/readlink -f "$0" || echo "$0")
+  local _dir=${_scr%/*}
+  [[ $_dir = "$_scr" ]] && _dir=.
+  [[ ! $_dir ]] && _dir=/
+  cpudir=$_dir
 }
 cpudir.initialize
 
 source "$cpudir/cpudefs.sh"
 
-mwg_check () {
+function mwg_check {
   if ! eval "$1"; then
     echo "$2" >&2
     exit 1
@@ -20,25 +20,25 @@ mwg_check () {
 
 fA=
 host=
-while test $# -gt 0; do
+while (($#)); do
   case "$1" in
-  -a)
+  (-a)
     fA=1 # show all processes
     ;;
-  *)
+  (*)
     mwg_check "test -z '$host'" "$0:arg\"$1\": host is already specified!"
-    host="$1"
+    host=$1
     ;;
   esac
   shift
 done
 
-mwg_check "test -n '$host'" "$0: host is not specified!"
+mwg_check '[[ $host ]]' "$0: host is not specified!"
 
-host="$($cpudir/cpugethost.sh "$host")" || exit 1
+host=$($cpudir/cpugethost.sh "$host") || exit 1
 
 if [[ $fA ]]; then
-  rsh.dispatch "$host" COLUMNS="$((COLUMNS-1))" top -cb -n 1
+  rsh.dispatch "$host" COLUMNS=$((COLUMNS-1)) top -cb -n 1
 else
-  rsh.dispatch "$host" COLUMNS="$((COLUMNS-1))" top -cb -n 1 | awk '$1=="PID"{head=1;print;next} !head||$8!="S"||$9!=0{print}'
+  rsh.dispatch "$host" COLUMNS=$((COLUMNS-1)) top -cb -n 1 | awk '$1=="PID"{head=1;print;next} !head||$8!="S"||$9!=0{print}'
 fi

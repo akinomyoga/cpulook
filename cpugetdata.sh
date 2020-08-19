@@ -1,14 +1,14 @@
 #!/bin/bash
 
 function cpudir.initialize {
-  local _scr="$(readlink -f "$0" || /bin/readlink -f "$0" || echo "$0")"
-  local _dir="${_scr%/*}"
-  [[ $_dir == "$_scr" ]] && _dir=.
-  [[ $_dir ]] || _dir=/
-  cpudir="$_dir"
+  local _scr=$(readlink -f "$0" || /bin/readlink -f "$0" || echo "$0")
+  local _dir=${_scr%/*}
+  [[ $_dir = "$_scr" ]] && _dir=.
+  [[ ! $_dir ]] && _dir=/
+  cpudir=$_dir
 }
 cpudir.initialize
-tmpdir="$HOME/.local/share/cpulook/tmp"
+tmpdir=$HOME/.local/share/cpulook/tmp
 [[ -d $tmpdir ]] || mkdir -p "$tmpdir"
 
 
@@ -24,7 +24,7 @@ function cpugetdata.read-options {
 }
 cpugetdata.read-options "$@"
 
-SUBTYPE="$cpudir/m/switch"
+SUBTYPE=$cpudir/m/switch
 
 if [[ $arg_cascade ]]; then
   "$cpudir/cpulook" 3 --cpugetdata --host-pattern="$arg_cascade"
@@ -43,14 +43,14 @@ function cpuinfo.load {
     return
   fi
 
-  local cpuline="$(awk '$1=="'$host'"' "$cpudir/cpulist.cfg" 2>/dev/null)"
+  local cpuline=$(awk '$1 == "'"$host"'"' "$cpudir/cpulist.cfg" 2>/dev/null)
   if [[ $cpuline ]]; then
     cpuinfo=($cpuline)
     return
   fi
 
-  local ncor="$(grep -c processor /proc/cpuinfo)"
-  cpuinfo=($host $ncor $ncor 20 $ncor)
+  local ncor=$(grep -c processor /proc/cpuinfo)
+  cpuinfo=("$host" "$ncor" "$ncor" 20 "$ncor")
   echo "${cpuinfo[*]}" >> "$cpudir/cpulist.cfg"
 }
 
@@ -62,7 +62,7 @@ umax=${cpuinfo[4]}
 [[ $ncor ]] || ncor=0
 [[ $gmax ]] || gmax=0
 [[ $nice ]] || nice=0
-[[ $umax ]] || umax="$gmax"
+[[ $umax ]] || umax=$gmax
 
 # status
 util=$(top -b -n 1 | awk '/^ *[[:digit:]]/{a+=$9;}END{print a;}')

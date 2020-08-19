@@ -4,15 +4,15 @@
 : ${CPUDIR:="$MWGDIR/share/cpulook"}
 
 function create-dir {
-  if test ! -d "$1"; then
+  if [[ ! -d $1 ]]; then
     echo "cpulook-install: creating directory '$1'"
     mkdir -p "$1"
   fi
 }
 
 function update {
-  local src="$1"
-  local dst="${2:-$CPUDIR/$src}"
+  local src=$1
+  local dst=${2:-$CPUDIR/$src}
   if [[ $src -nt $dst ]]; then
     echo "cpulook-install: updating '$dst'..."
     cp -p "$src" "$dst"
@@ -26,9 +26,9 @@ function update {
 }
 
 function update-script {
-  local src="$1"
-  local dst="${2:-$CPUDIR/$src}"
-  if test "$src" -nt "$dst"; then
+  local src=$1
+  local dst=${2:-$CPUDIR/$src}
+  if [[ $src -nt $dst ]]; then
     echo "cpulook-install: updating '$dst'..."
     cp -p "$src" "$dst"
 
@@ -57,7 +57,7 @@ if [[ ${CPUDIR%/} != ${PWD%/} ]]; then
   # update m/
   create-dir "$CPUDIR/m"
   for d in m/*; do
-    if [[ -d "$d" ]]; then
+    if [[ -d $d ]]; then
       cp -rfp "$d" "$CPUDIR/m/"
     fi
   done
@@ -68,7 +68,7 @@ if [[ ${CPUDIR%/} != ${PWD%/} ]]; then
   update-script hosts/ssh
 
   # create m/switch
-  if test ! -e "$CPUDIR/m/switch"; then
+  if [[ ! -e $CPUDIR/m/switch ]]; then
     if type bsub &>/dev/null; then
       ln -fs bsub "$CPUDIR/m/switch"
     else
@@ -116,14 +116,14 @@ if [[ ! -d $MWGDIR/bin ]]; then
 fi
 
 # check PATH
-if ! [[ "$PATH" =~ (^|:)"$MWGDIR/bin"(/:|:|$) ]]; then
+if ! [[ $PATH =~ (^|:)"$MWGDIR/bin"(/:|:|$) ]]; then
   echo "cpulook-install: [1mplease add '$MWGDIR/bin' to environmental variable PATH.[m"
 fi
 
 function install-bin {
-  local file="$1"
-  local entity="$CPUDIR/$file"
-  local target="$MWGDIR/bin/$file"
+  local file=$1
+  local entity=$CPUDIR/$file
+  local target=$MWGDIR/bin/$file
   if [[ ! -e $target ]]; then
     echo "cpulook-install: creating link '$target' -> '$entity'"
     ln -fs "$entity" "$target"
