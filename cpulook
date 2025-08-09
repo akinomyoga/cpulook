@@ -334,7 +334,13 @@ function cpustat.view/color {
 
       # options for progress3
       if (block_char_width == 1) {
-        CPUBAR_WIDTH = 32;
+        if (WIDTH >= 128)
+          CPUBAR_WIDTH = 128;
+        else if (WIDTH >= 64)
+          CPUBAR_WIDTH = 64;
+        else
+          CPUBAR_WIDTH = 32;
+
         CPUBAR_CORE_STRETCH = 0; # core の表示幅を自動的に変えるかどうか
         CPUBAR_FOLD_BALANCED = 0; # 1行の core 数を揃えるかどうか
       }
@@ -384,25 +390,42 @@ function cpujobs.view/cpugetdata {
 
 function cpujobs.view/fold {
   local -i cols=$1
-  local s61='                                                             '
-  awk -v s61="$s61" -v cols="$cols" '
-   BEGIN{
-     ioffset=40;
-     indent=substr(s61,1,ioffset);
-   }
+  awk -v cols="$cols" '
+    BEGIN {
+      OFFSET_CMD = 63;
+      OFFSET_MIN = 40;
+      indent_cmd = sprintf("%*s", OFFSET_CMD, "");
+      indent_min = sprintf("%*s", OFFSET_MIN, "");
+      width_cmd = cols - 1 - OFFSET_CMD;
+      width_max = cols - 1 - OFFSET_MIN;
+    }
 
-   length($0)<cols{print;next}
-   {
-     print substr($0,1,cols-1);
-     rest=substr($0,cols);
-     rlen=length(rest);
-     width=cols-1-ioffset;
-     if(rlen<width){
-       print substr(s61,1,cols-1-rlen) rest;
-     }else while(rlen>0){
-       print indent substr(rest,1,width);
-       rest=substr(rest,width+1);
-       rlen=length(rest);}}'
+    length($0) < cols { print; next; }
+
+    function div_ceil(a, b) {
+      return int((a + b -1) / b);
+    }
+
+    {
+      print substr($0, 1, cols - 1);
+      rest = substr($0, cols);
+      rlen = length(rest);
+
+      if (div_ceil(rlen, width_cmd) <= div_ceil(width_cmd * 3, 4)) {
+        indent = indent_cmd;
+        width = width_cmd;
+      } else {
+        indent = indent_min;
+        width = width_max;
+      }
+
+      while (rlen > 0) {
+        print indent substr(rest, 1, width);
+        rest = substr(rest, width + 1);
+        rlen = length(rest);
+      }
+    }
+  '
 }
 
 function cpujobs.view {

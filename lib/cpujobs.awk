@@ -113,7 +113,7 @@ BEGIN{
 
   USER=ENVIRON["USER"];
 
-  printf("%-10s %10s:%-5s %6s %5s %-4s %5s %8s %s\n","USER","HOST","PID","%CPU","%MEM","STAT","START","TIME","COMMAND") > FJOBS
+  printf("%-10s %10s:%-7s %6s %5s %-4s %5s %8s %s\n", "USER", "HOST", "PID", "%CPU", "%MEM", "STAT", "START", "TIME", "COMMAND") > FJOBS;
 }
 
 $11=="COMMAND"{
@@ -121,7 +121,7 @@ $11=="COMMAND"{
   next;
 }
 
-function output_jobline( _time,_mode,_command){
+function output_jobline( _time, _mode, _command, _start){
   _mode=mode;
 
   mode="";
@@ -142,8 +142,10 @@ function output_jobline( _time,_mode,_command){
     return;
   }
 
-  _time=sprintf("%d:%02d",int(time/60),time%60);
-  printf("%-10s %10s:%-5s %6.1f %5.1f %-4s %5s %8.8s %s\n",user,host,pid,cpu,mem,stat,start,_time,_command) > FJOBS
+  _start = start;
+  gsub(/月/, "/", _start);
+  _time = sprintf("%d:%02d", int(time / 60), time % 60);
+  printf("%-10s %10s:%-7s %6.1f %5.1f %-4s %5s %8.8s %s\n", user, host, pid, cpu, mem, stat, _start, _time, _command) > FJOBS;
 }
 
 function cumulate_values(){
