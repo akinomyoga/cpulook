@@ -19,12 +19,19 @@ function cpulook/initialize-cpudir {
     cpudir=$script_dir
   fi
 
-  if [[ ! -f $cpudir/cpudefs.sh ]]; then
-    printf '%s\n' "$0: failed to detect the cpulook directory." >&2
+  # Note: The file ending with .sh is supposed to be a helper script, which is
+  # already located in the lib subdirectory.
+  [[ $script == *.sh ]] && cpudir=$cpudir/..
+
+  local common=$cpudir/lib/common.bash
+  if [[ ! -f $common ]]; then
+    printf '%s\n' "$script: failed to detect the cpulook directory." >&2
     exit 2
-  elif [[ ! -r $cpudir/cpudefs.sh ]]; then
-    printf '%s\n' "$0: permission denied for the cpulook directory." >&2
+  elif [[ ! -r $common ]]; then
+    printf '%s\n' "$script: permission denied for the cpulook directory." >&2
     exit 2
+  else
+    source "$common"
   fi
 }
 cpulook/initialize-cpudir

@@ -19,18 +19,23 @@ function cpulook/initialize-cpudir {
     cpudir=$script_dir
   fi
 
-  if [[ ! -f $cpudir/cpudefs.sh ]]; then
-    printf '%s\n' "$0: failed to detect the cpulook directory." >&2
+  # Note: The file ending with .sh is supposed to be a helper script, which is
+  # already located in the lib subdirectory.
+  [[ $script == *.sh ]] && cpudir=$cpudir/..
+
+  local common=$cpudir/lib/common.bash
+  if [[ ! -f $common ]]; then
+    printf '%s\n' "$script: failed to detect the cpulook directory." >&2
     exit 2
-  elif [[ ! -r $cpudir/cpudefs.sh ]]; then
-    printf '%s\n' "$0: permission denied for the cpulook directory." >&2
+  elif [[ ! -r $common ]]; then
+    printf '%s\n' "$script: permission denied for the cpulook directory." >&2
     exit 2
+  else
+    source "$common"
   fi
 }
 cpulook/initialize-cpudir
 ##----CPULOOK_COMMON_HEADER_END----
-
-source "$cpudir/cpudefs.sh"
 
 function mwg_check {
   if ! eval "$1"; then
@@ -56,7 +61,7 @@ done
 
 mwg_check '[[ $host ]]' "$0: host is not specified!"
 
-host=$($cpudir/cpugethost.sh "$host") || exit 1
+host=$("$cpudir"/lib/cpugethost.sh "$host") || exit 1
 
 if [[ $fA ]]; then
   rsh.dispatch "$host" COLUMNS=$((COLUMNS-1)) top -cb -n 1

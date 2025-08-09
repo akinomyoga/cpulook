@@ -27,11 +27,11 @@
 #     * added the support for the variable `guse'
 #
 #   2012-04-24, Koichi Murase <murase@nt.phys.s.u-tokyo.ac.jp>
-#     * created. extracted out of `cpugetdata.sh'
+#     * created. extracted out of `lib/cpugetdata.sh'
 #
 
-: ${cpudir:?'$cpudir is empty which should be set in cpugetdata.sh.'}
-: ${tmpdir:?'$tmpdir is empty which should be set in cpugetdata.sh.'}
+: ${cpudir:?'$cpudir is empty which should be set in lib/cpugetdata.sh.'}
+: ${tmpdir:?'$tmpdir is empty which should be set in lib/cpugetdata.sh.'}
 : ${host:=${HOSTNAME%%.*}}
 
 create_regex_cmdline() {
@@ -43,7 +43,7 @@ create_regex_cmdline() {
 
 fjobs="$tmpdir/$host.jobs"
 
-result=($(ps uaxf | type="rsh.used" host="$host" fjobs="$fjobs" "$cpudir/cpujobs.awk"))
+result=($(ps uaxf | type="rsh.used" host="$host" fjobs="$fjobs" "$cpudir/lib/cpujobs.awk"))
 
 uuse=${result[0]:-0}
 guse=${result[1]:-0}

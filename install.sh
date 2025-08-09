@@ -42,7 +42,11 @@ function update-script {
 # <cpudir>/lib
 
 create-dir "$CPUDIR/lib"
-update lib/echox.bash "$CPUDIR/lib/echox.bash"
+update-script lib/echox.bash
+update-script lib/common.bash
+update        lib/cpujobs.awk
+update-script lib/cpugetdata.sh
+update-script lib/cpugethost.sh
 
 #------------------------------------------------------------------------------
 # <cpudir>
@@ -74,10 +78,6 @@ if [[ ${CPUDIR%/} != ${PWD%/} ]]; then
 
   # update scripts
   update cpulist-default.cfg
-  update cpujobs.awk
-  update-script cpugetdata.sh
-  update-script cpugethost.sh
-  update-script cpudefs.sh
   update-script cpukill
   update-script cpulast
   update-script cpulook

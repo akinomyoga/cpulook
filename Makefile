@@ -19,8 +19,8 @@ distexclude= \
 	--exclude=./cpulook/.git
 
 script-files := \
-  cpugetdata.sh \
-  cpugethost.sh \
+  lib/cpugetdata.sh \
+  lib/cpugethost.sh \
   cpukill \
   cpulast \
   cpulook \

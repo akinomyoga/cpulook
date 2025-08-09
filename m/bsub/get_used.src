@@ -30,8 +30,8 @@
 #   * implementation using the `bjobs' command
 #
 
-: ${cpudir:?'$cpudir is empty which should be set in cpugetdata.sh.'}
-: ${tmpdir:?'$tmpdir is empty which should be set in cpugetdata.sh.'}
+: ${cpudir:?'$cpudir is empty which should be set in lib/cpugetdata.sh.'}
+: ${tmpdir:?'$tmpdir is empty which should be set in lib/cpugetdata.sh.'}
 : ${host:=${HOSTNAME%%.*}}
 
 getUsedWithLocalBjobs(){
@@ -69,7 +69,7 @@ getUsedWithLocalBjobs
 exec 5>&1
 fjobs="/dev/fd/5"
 echo "==cpulook.jobs==" >&5
-result="$(ps uaxf | type="lava.used" host="$host" fjobs="$fjobs" "$cpudir/cpujobs.awk")"
+result="$(ps uaxf | type="lava.used" host="$host" fjobs="$fjobs" "$cpudir/lib/cpujobs.awk")"
 
 # # v20130504
 # uuse=$(ps ux|egrep '/bin/sh '"$HOME"'/\.lsbatch/[[:digit:]]|/usr/share/lava/.+/sbatchd$'|awk '$1=="'"$USER"'"'|wc -l)
