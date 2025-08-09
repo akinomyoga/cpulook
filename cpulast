@@ -39,4 +39,4 @@ cpulook/initialize-cpudir
 
 host=$("$cpudir"/lib/cpugethost.sh "$1") || exit 1
 
-rsh.dispatch "$host" last|less
+rsh.dispatch "$host" last | cpulook/view

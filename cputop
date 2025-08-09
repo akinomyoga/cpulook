@@ -39,7 +39,7 @@ cpulook/initialize-cpudir
 
 function mwg_check {
   if ! eval "$1"; then
-    echo "$2" >&2
+    cpulook/print "$2" >&2
     exit 1
   fi
 }
@@ -67,4 +67,4 @@ if [[ $fA ]]; then
   rsh.dispatch "$host" COLUMNS=$((COLUMNS-1)) top -cb -n 1
 else
   rsh.dispatch "$host" COLUMNS=$((COLUMNS-1)) top -cb -n 1 | awk '$1=="PID"{head=1;print;next} !head||$8!="S"||$9!=0{print}'
-fi
+fi | cpulook/view

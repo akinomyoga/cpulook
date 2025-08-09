@@ -2,6 +2,16 @@
 
 cpulook_cache=${XDG_CACHE_HOME:-$HOME/.cache}/cpulook
 
+function cpulook/print { printf '%s\n' "${1-}"; }
+function cpulook/string#match { [[ $1 =~ $2 ]]; }
+function cpulook/view {
+  if [[ -t 1 ]] && type -P less &>/dev/null; then
+    less -FS
+  else
+    cat
+  fi
+}
+
 function rsh.dispatch {
   local host=$1; shift
   local command="$*"
