@@ -20,7 +20,6 @@ distexclude= \
 
 script-files := \
   lib/cpugetdata.sh \
-  lib/cpugethost.sh \
   cpukill \
   cpulast \
   cpulook \

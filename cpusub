@@ -89,7 +89,7 @@ if [[ ! $command ]]; then
 fi
 
 if [[ $ihost ]]; then
-  host=$("$cpudir"/lib/cpugethost.sh "$ihost") || exit 1
+  cpulook/parse-host "$ihost" || exit 1
   redirect=
   [[ $stdout ]] && redirect="$redirect 1>$stdout"
   [[ $stderr ]] && redirect="$redirect 2>$stderr"

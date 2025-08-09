@@ -61,7 +61,7 @@ done
 
 mwg_check '[[ $host ]]' "$0: host is not specified!"
 
-host=$("$cpudir"/lib/cpugethost.sh "$host") || exit 1
+cpulook/parse-host "$host" || exit 1
 
 if [[ $fA ]]; then
   rsh.dispatch "$host" COLUMNS=$((COLUMNS-1)) top -cb -n 1

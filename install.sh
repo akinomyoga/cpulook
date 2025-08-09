@@ -46,7 +46,6 @@ update-script lib/echox.bash
 update-script lib/common.bash
 update        lib/cpujobs.awk
 update-script lib/cpugetdata.sh
-update-script lib/cpugethost.sh
 
 #------------------------------------------------------------------------------
 # <cpudir>

@@ -37,6 +37,5 @@ function cpulook/initialize-cpudir {
 cpulook/initialize-cpudir
 ##----CPULOOK_COMMON_HEADER_END----
 
-host=$("$cpudir"/lib/cpugethost.sh "$1") || exit 1
-
+cpulook/parse-host "$1" || exit 1
 rsh.dispatch "$host" last | cpulook/view
