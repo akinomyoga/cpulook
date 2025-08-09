@@ -393,7 +393,7 @@ function cpujobs.view/fold {
   awk -v cols="$cols" '
     BEGIN {
       OFFSET_CMD = 63;
-      OFFSET_MIN = 40;
+      OFFSET_MIN = 8;
       indent_cmd = sprintf("%*s", OFFSET_CMD, "");
       indent_min = sprintf("%*s", OFFSET_MIN, "");
       width_cmd = cols - 1 - OFFSET_CMD;
@@ -411,7 +411,7 @@ function cpujobs.view/fold {
       rest = substr($0, cols);
       rlen = length(rest);
 
-      if (div_ceil(rlen, width_cmd) <= div_ceil(width_cmd * 3, 4)) {
+      if (div_ceil(rlen, width_cmd) <= div_ceil(width_cmd * 3, 8)) {
         indent = indent_cmd;
         width = width_cmd;
       } else {
