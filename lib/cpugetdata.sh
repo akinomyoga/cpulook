@@ -70,7 +70,7 @@ function cpuinfo.load {
     return
   fi
 
-  local cpuline=$(awk '$1 == "'"$host"'"' "$cpudir/cpulist.cfg" 2>/dev/null)
+  local cpuline=$(awk '$1 == "'"$host"'"' "$cpulook_cpulist" 2>/dev/null)
   if [[ $cpuline ]]; then
     cpuinfo=($cpuline)
     return
@@ -78,7 +78,7 @@ function cpuinfo.load {
 
   local ncor=$(grep -c processor /proc/cpuinfo)
   cpuinfo=("$host" "$ncor" "$ncor" 20 "$ncor")
-  echo "${cpuinfo[*]}" >> "$cpudir/cpulist.cfg"
+  cpulook/print "${cpuinfo[*]}" >> "$cpulook_cpulist"
 }
 
 cpuinfo.load "$@"
@@ -97,8 +97,8 @@ load=$(awk '{print int($1*100);exit}' /proc/loadavg)
 source "$SUBTYPE/get_used.src"
 
 # getline
-echo ==cpulook.stat==
-echo "$host:$ncor:$gmax:$umax:$nice:$util:$load:$guse:$uuse"| gawk -F':' \
+cpulook/print '==cpulook.stat=='
+<<< "$host:$ncor:$gmax:$umax:$nice:$util:$load:$guse:$uuse" gawk -F ':' \
   -v upend="${upend:-0}" \
   -v gpend="${gpend:-0}" '
   function min(a,b){return a<b?a:b;}

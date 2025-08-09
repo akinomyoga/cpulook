@@ -7,6 +7,6 @@ case $1 in
   (cd "$cpudir"; eval "$*")
   return 0 ;;
 (*)
-  echo not supported operation >&2
+  cpulook/print 'not supported operation' >&2
   return 1 ;;
 esac

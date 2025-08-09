@@ -4,6 +4,7 @@ cpulook_prog=${0##*/}
 cpulook_cache=${XDG_CACHE_HOME:-$HOME/.cache}/cpulook
 cpulook_cpulist=$cpudir/cpulist.cfg
 
+function cpulook/put { printf '%s' "${1-}"; }
 function cpulook/print { printf '%s\n' "${1-}"; }
 function cpulook/string#match { [[ $1 =~ $2 ]]; }
 function cpulook/view {

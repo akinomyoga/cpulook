@@ -57,7 +57,7 @@ function cpulook/read_argument {
       if [[ ! $arg_timeout ]]; then
         arg_timeout=$arg
       else
-        echo "cpulook (arguments): timeout is specified more than once" >&2
+        cpulook/print "cpulook (arguments): timeout is specified more than once" >&2
         return 1
       fi ;;
     esac
@@ -128,7 +128,7 @@ function DSR6 {
 #------------------------------------------------------------------------------
 
 function cpustat.view/cpugetdata {
-  echo ==cpulook.stat==
+  cpulook/print '==cpulook.stat=='
   sed 1d
 }
 
@@ -384,7 +384,7 @@ function cpustat.view {
 }
 
 function cpujobs.view/cpugetdata {
-  echo ==cpulook.jobs==
+  cpulook/print '==cpulook.jobs=='
   sed '1d;/^$/d'
 }
 
@@ -443,15 +443,17 @@ function cpujobs.view {
 
 cpustat="$cpulook_cache/cpustat.txt"
 cpujobs="$cpulook_cache/cpujobs.txt"
-cpulist="$cpudir/cpulist.cfg"
 
+## @fn cpulist.load
+##   @var[in] cpulook_cpulist
+##   @var[out] cpulist_data
 function cpulist.load {
   cpulist_data=()
-  local line= rex_comment='^[[:space:]]*(#|$)'
+  local line=
   while IFS= read -r line || [[ $line ]]; do
-    [[ $line =~ $rex_comment ]] && continue
+    cpulook/string#match "$line" '^[[:space:]]*(#|$)' && continue
     cpulist_data[${#cpulist_data[@]}]="$line"
-  done < "$cpulist"
+  done < "$cpulook_cpulist"
 }
 
 #------------------------------------------------------------------------------
@@ -555,12 +557,12 @@ create_cpujobs(){
 # cpustat
 create_cpustat(){
   local cpu
-  echo "HOST         C  I  NI : UTIL   LOAD   UC ___"
+  cpulook/print "HOST         C  I  NI : UTIL   LOAD   UC ___"
   for cpu in "${hosts[@]}"; do
     if [[ $cpulook_cache/$cpu.stat -ot $ftime || ! -s $cpulook_cache/$cpu.stat ]]; then
       printf '%-12s  0  0 -- : ----.- ----.- -- \n' "$cpu"
     else
-      echo "$(< "$cpulook_cache/$cpu.stat")"
+      cat "$cpulook_cache/$cpu.stat"
     fi
   done
 }

@@ -37,8 +37,8 @@
 create_regex_cmdline() {
   local w='[^[:space:]]'
   local s='[[:space:]]'
-  local f="$w+$s+"
-  echo -n "^$s*$f$f$f$f$f$f$f$f$f$w+$s(.+)$"
+  local f=$w'+'$s'+'
+  cpulook/put "^$s*$f$f$f$f$f$f$f$f$f$w+$s(.+)$"
 }
 
 fjobs="$cpulook_cache/$host.jobs"

@@ -42,7 +42,6 @@ cpulook/initialize-cpudir
 
 SUBTYPE=$cpudir/m/switch
 
-cpulist=$cpudir/cpulist.cfg
 list=$cpudir/task.txt
 cook=$cpudir/task.eat
 stat=$cpulook_cache/cpustat.txt
@@ -62,11 +61,11 @@ fi
 function fileage {
   # how many seconds has past since the file was modified
   local file=$1
-  echo $(($(date '+%s')-$(date '+%s' -r "$file")))
+  cpulook/print $(($(date '+%s')-$(date '+%s' -r "$file")))
 }
 
 function isvalidcpu {
-  local cpus=$(cat "$cpulist"|awk '/^[[:space:]]*#/{next;}/[^[:space:]]/{print $1}')
+  local cpus=$(awk '/^[[:space:]]*#/{next;}/[^[:space:]]/{print $1}' "$cpulook_cpulist")
   local cpu
   for cpu in $cpus; do
     [[ $cpu == "$1" ]] && return 0
@@ -163,7 +162,7 @@ function seek_submit {
 
   datetime=$(date +'[%x %T]')
   function log_submit {
-    echo "$datetime $1" >> "$seeklog"
+    cpulook/print "$datetime $1" >> "$seeklog"
     [[ $fV ]] && echom "$datetime $1"
   }
 
@@ -171,7 +170,7 @@ function seek_submit {
   return
 }
 
-function set_term_title { echo -n $'\ek'"$*"$'\e\\'; }
+function set_term_title { cpulook/put $'\ek'"$*"$'\e\\'; }
 
 function next_tasklist {
   [[ -s $list ]] && return 0

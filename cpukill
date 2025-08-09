@@ -43,7 +43,7 @@ flog=$cpudir/cpuseekd.log
 source "$cpudir/lib/echox.bash"
 datetime=$(date +'[%x %T]')
 function log_submit {
-  printf '%s\n' "$datetime $1" >> "$flog"
+  cpulook/print "$datetime $1" >> "$flog"
   echom "$datetime $1"
 }
 

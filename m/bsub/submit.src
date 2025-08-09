@@ -8,10 +8,10 @@
 # title="${cmd#. ~/.bashrc ; cd * ; }"
 # title="${title% &>*}"
 # title="${title% >*}"
-title=$(echo "$cmd"|sed '
+title=$(sed '
   s#^\. ~/\.bashrc \?; \?cd [^;[:space:]]\+ \?; \?##
   s# \?[&[:digit:]]\?>[^>&;|]\+$##
-')
+' <<< "$cmd")
 
 log_submit "host: $name  title: $title"
 log_submit "bsub -e /dev/null -o /dev/null -m \"$name\" -J \"$title\" \"$cmd\""

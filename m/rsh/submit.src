@@ -15,7 +15,7 @@ get_free_fname() {
     name="$name+"
     cand="$name$ext"
   done
-  echo "$cand"
+  cpulook/print "$cand"
 }
 
 # 2013/05/05 version2
@@ -26,12 +26,12 @@ rsh_submitG() {
     # register command
     ftmp="$(get_free_fname "$cpulook_cache/rshsub.$name.$id" .tmp)"
     fcmd="$(get_free_fname "$cpulook_cache/rshsub.$name.$id" .cmd)"
-    echo "$cmd" > "$ftmp"
+    cpulook/print "$cmd" > "$ftmp"
     mv "$ftmp" "$fcmd"
 
     # try to get the right to execute rsh
     fown="$cpulook_cache/rshsub.$name.own"
-    echo -n $id > "$fown"
+    cpulook/put "$id" > "$fown"
     sleep 5
     test "$(cat "$fown")" != "$id" && exit
 
@@ -50,8 +50,8 @@ rsh_submitG() {
 
 # 2013/05/05 version
 rsh_submitE() {
-  local fcmd="$cpudir/rshexec.$$.$(echo "$cmd"|md5sum|awk '{printf("%s",$1)}')"
-  echo -n "$cmd" > "$fcmd"
+  local fcmd="$cpudir/rshexec.$$.$(md5sum <<< "$cmd" | awk '{printf("%s",$1)}')"
+  cpulook/put "$cmd" > "$fcmd"
   if test ! -s "$fcmd"; then
     log_submit "rsh/submitE: ERROR! failed to create a command file '$fcmd'!"
     return 1

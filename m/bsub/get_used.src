@@ -60,7 +60,7 @@ getUsedWithLocalBjobs(){
   upend=${result[2]}
   gpend=${result[3]}
 
-  # echo "user=$USER host=$host uuse=$uuse guse=$guse" >"$cpulook_cache/bsub.$host.used"
+  # cpulook/print "user=$USER host=$host uuse=$uuse guse=$guse" >"$cpulook_cache/bsub.$host.used"
 }
 
 getUsedWithLocalBjobs
@@ -68,7 +68,7 @@ getUsedWithLocalBjobs
 # fjobs="$cpulook_cache/$host.jobs"
 exec 5>&1
 fjobs="/dev/fd/5"
-echo "==cpulook.jobs==" >&5
+cpulook/print '==cpulook.jobs==' >&5
 result="$(ps uaxf | type="lava.used" host="$host" fjobs="$fjobs" "$cpudir/lib/cpujobs.awk")"
 
 # # v20130504
@@ -78,7 +78,7 @@ result="$(ps uaxf | type="lava.used" host="$host" fjobs="$fjobs" "$cpudir/lib/cp
 #   if test -s "$fdat"; then
 #     awk '$2=="'"$host"'"{print $1;}' "$fdat"
 #   else
-#     echo "$uuse"
+#     cpulook/print "$uuse"
 #   fi
 # }
 # guse=$(get_guse)

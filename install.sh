@@ -86,9 +86,10 @@ if [[ ${CPUDIR%/} != ${PWD%/} ]]; then
   update-script cputop
 
   # create configuration
-  if [[ ! -s $CPUDIR/cpulist.cfg ]]; then
-    echo "cpulook-install: creating default '$CPUDIR/cpulist.cfg'."
-    cp -f "$CPUDIR/cpulist-default.cfg" "$CPUDIR/cpulist.cfg"
+  local config_cpulist=$CPUDIR/cpulist.cfg
+  if [[ ! -s $config_cpulist ]]; then
+    echo "cpulook-install: creating default '$config_cpulist'."
+    cp -f "$CPUDIR/cpulist-default.cfg" "$config_cpulist"
     local nproc=$(
       if type nproc &>/dev/null; then
         nproc 2>/dev/null
@@ -98,8 +99,8 @@ if [[ ${CPUDIR%/} != ${PWD%/} ]]; then
         echo 1
       fi)
     ((nproc=nproc<=0?1:nproc))
-    echo "${HOSTNAME##*.} $nproc $nproc 20 $nproc" >> "$CPUDIR/cpulist.cfg"
-    echo "cpulook-install: [1mplease edit '$CPUDIR/cpulist.cfg'.[m"
+    echo "${HOSTNAME##*.} $nproc $nproc 20 $nproc" >> "$config_cpulist"
+    echo "cpulook-install: [1mplease edit '$config_cpulist'.[m"
   fi
 fi
 
