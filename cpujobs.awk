@@ -141,7 +141,7 @@ function output_jobline( _time,_mode,_command){
   }else{
     return;
   }
-  
+
   _time=sprintf("%d:%02d",int(time/60),time%60);
   printf("%-10s %10s:%-5s %6.1f %5.1f %-4s %5s %8.8s %s\n",user,host,pid,cpu,mem,stat,start,_time,_command) > FJOBS
 }
@@ -151,14 +151,10 @@ function cumulate_values(){
   time+=get_ctime();
   mem+=$4;
   stat=add_stat(stat,$8);
-  #print "cumulate_values: mode=" mode " ctime=" get_ctime() " cmd=" cmd >> "/home/murase/.mwg/cpulook/a." host ".txt"
 }
 
 function dbg(name){
   if(host!="laguerre01")return;
-
-  #print "cumulate_values: mode=" mode " ctime=" get_ctime() " cmd=" cmd >> "/home/murase/.mwg/cpulook/a." host ".txt"
-  #print "NR=" NR ":" name ": dbg mode=" mode " cmd=" cmd > "/home/murase/.mwg/cpulook/a.txt"
 }
 
 #------------------------------------------------------------------------------
@@ -272,5 +268,4 @@ END{
   output_jobline();
   if(TYPE=="rsh.used")
     print uuse, guse;
-  #print "dbg: " host ": uuse=" uuse " guse=" guse >> "/home/murase/.mwg/cpulook/a.txt"
 }

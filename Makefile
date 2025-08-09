@@ -16,10 +16,10 @@ distexclude= \
 	--exclude=./cpulook/cpulist.cfg \
 	--exclude=./cpulook/.git
 
-dist: ext/echox
+dist: lib/echox.bash
 	cd .. && tar cavf cpulook-$$(date +%Y%m%d).tar.xz ./cpulook $(distexclude)
 
-ext/echox: $(MWGDIR)/echox
+lib/echox.bash: $(MWGDIR)/echox
 	cp -p $< $@
 
 install:

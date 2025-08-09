@@ -1,14 +1,21 @@
 #!/usr/bin/env bash
 # to source
 
-: ${remote_cpudir:=.mwg/share/cpulook}
-
-case "$1" in
-(rsh)
-  shift
-  ssh "$host" "cd $remote_cpudir; $*"
-  return 0 ;;
-(*)
-  echo not supported operation >&2
-  return 1 ;;
-esac
+## @fn cpulook/host:ssh/handler host command...
+##   @param[in] host
+##   @param[in] command...
+##   @var[in] cpulook_remote_cpudir
+function cpulook/host:ssh/handler {
+  case $1 in
+  (rsh)
+    shift
+    local remote_cpudir=${cpulook_remote_cpudir:-.local/share/cpulook}
+    local q=\' Q="'\''"
+    ssh "$host" "cd '${remote_cpudir//$q/$Q}'; $*"
+    return 0 ;;
+  (*)
+    printf 'not supported operation\n' >&2
+    return 1 ;;
+  esac
+}
+cpulook/host:ssh/handler "$@"

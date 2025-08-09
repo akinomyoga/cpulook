@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
 # to source
 
-: ${cpudir:=$HOME/.mwg/share/cpulook}
-
-case "$1" in
+case $1 in
 (rsh)
   shift
   (cd "$cpudir"; eval "$*")

@@ -1,21 +1,24 @@
 #!/usr/bin/env bash
 
 function cpudir.initialize {
-  # cpudir=${MWGDIR:-$HOME/.mwg}/share/cpulook
-  # [[ -d $cpudir ]] && return
-  local _scr=$(readlink -f "$0" || /bin/readlink -f "$0" || echo "$0")
+  local _scr=$(readlink -f "$0" || /bin/readlink -f "$0" || printf '%s\n' "$0") 2>/dev/null
   local _dir=${_scr%/*}
   [[ $_dir == "$_scr" ]] && _dir=.
-  [[ ! $_dir ]] && _dir=/
-  cpudir=$_dir
+  if [[ -d ${_dir:=/} ]]; then
+    cpudir=$_dir
+  elif _dir=${XDG_DATA_HOME:-$HOME/.local/share}/cpulook; [[ -d $_dir ]]; then
+    cpudir=$_dir
+  elif _dir=${MWGDIR:-$HOME/.mwg}/share/cpulook; [[ -d $_dir ]]; then
+    cpudir=$_dir
+  fi
 }
 cpudir.initialize
 
 tmpdir=$HOME/.local/share/cpulook/tmp
+
 #------------------------------------------------------------------------------
 # definitions
 
-: ${MWGDIR:="$HOME/.mwg"}
 SUBTYPE=$cpudir/m/switch
 
 cpulist=$cpudir/cpulist.cfg
@@ -30,8 +33,7 @@ task_wait=600
 
 if [[ $1 == v ]]; then
   fV=v
-  source "$MWGDIR/libexec/echox"
-  # echom 'dbg: verbose mode'
+  source "$cpudir/lib/echox.bash"
 else
   fV=
 fi

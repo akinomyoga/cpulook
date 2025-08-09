@@ -1,7 +1,22 @@
 #!/usr/bin/env bash
 
-: ${MWGDIR:="$HOME/.mwg"}
-: ${CPUDIR:="$MWGDIR/share/cpulook"}
+cpulook_prefix=${PREFIX-}
+if [[ ! $cpulook_prefix ]]; then
+  if [[ ${XDG_DATA_HOME-} &&${XDG_DATA_HOME%/} == */share ]]; then
+    cpulook_prefix=${XDG_DATA_HOME%/}
+    cpulook_prefix=${cpulook_prefix%/share}
+  elif [[ ${MWGDIR-} ]]; then
+    cpulook_prefix=$MWGDIR
+  elif [[ -d ~/.local ]]; then
+    cpulook_prefix=~/.local
+  elif [[ -d ~/.mwg ]]; then
+    cpulook_prefix=~/.mwg
+  else
+    cpulook_prefix=~/.local
+  fi
+fi
+
+CPUDIR=$cpulook_prefix/share/cpulook
 
 function create-dir {
   if [[ ! -d $1 ]]; then
@@ -20,7 +35,7 @@ function update {
 
   # cpudir 算出を書き換える場合
   # sed '
-  #   /^function cpudir\.initialize/i cpudir="$HOME/.mwg/share/cpulook"
+  #   /^function cpudir\.initialize/i cpudir="$cpulook_prefix/share/cpulook"
   #   /^function cpudir\.initialize/,/^cpudir\.initialize/d
   # ' cputop
 }
@@ -43,13 +58,13 @@ function update-script {
 }
 
 #------------------------------------------------------------------------------
-# .mwg/libexec/echox
+# <cpudir>/lib
 
-create-dir "$MWGDIR/libexec"
-update ext/echox "$MWGDIR/libexec/echox"
+create-dir "$CPUDIR/lib"
+update lib/echox.bash "$CPUDIR/lib/echox.bash"
 
 #------------------------------------------------------------------------------
-# .mwg/share/cpulook
+# <cpudir>
 
 if [[ ${CPUDIR%/} != ${PWD%/} ]]; then
   create-dir "$CPUDIR"
@@ -109,21 +124,21 @@ if [[ ${CPUDIR%/} != ${PWD%/} ]]; then
 fi
 
 #------------------------------------------------------------------------------
-# .mwg/bin
+# <cpulook_prefix>/bin
 
-if [[ ! -d $MWGDIR/bin ]]; then
-  create-dir "$MWGDIR/bin"
+if [[ ! -d $cpulook_prefix/bin ]]; then
+  create-dir "$cpulook_prefix/bin"
 fi
 
 # check PATH
-if ! [[ $PATH =~ (^|:)"$MWGDIR/bin"(/:|:|$) ]]; then
-  echo "cpulook-install: [1mplease add '$MWGDIR/bin' to environmental variable PATH.[m"
+if ! [[ $PATH =~ (^|:)"$cpulook_prefix/bin"/?(:|$) ]]; then
+  echo "cpulook-install: [1mplease add '$cpulook_prefix/bin' to the environment variable PATH.[m"
 fi
 
 function install-bin {
   local file=$1
   local entity=$CPUDIR/$file
-  local target=$MWGDIR/bin/$file
+  local target=$cpulook_prefix/bin/$file
   if [[ ! -e $target ]]; then
     echo "cpulook-install: creating link '$target' -> '$entity'"
     ln -fs "$entity" "$target"
