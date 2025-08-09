@@ -37,33 +37,38 @@ function cpulook/initialize-cpudir {
 cpulook/initialize-cpudir
 ##----CPULOOK_COMMON_HEADER_END----
 
-function mwg_check {
-  if ! eval "$1"; then
-    cpulook/print "$2" >&2
-    exit 1
+## @fn cputop/read-arguments args...
+##   @var[out] flags
+##   @var[out] host
+function cputop/read-arguments {
+  flags=
+  host=
+  local host_set=
+  while (($#)); do
+    case $1 in
+    (-a)
+      flags=a$flags ;; # show all processes
+    (*)
+      if [[ $host_set ]]; then
+        cpulook/print "$cpulook_prog(arg \"$1\"): host is already specified." >&2
+        flags=E$flags
+      fi
+      host=$1 host_set=1 ;;
+    esac
+    shift
+  done
+  if [[ ! $host_set ]]; then
+    cpulook/print "$cpulook_prog(args): host is not specified!" >&2
+    flags=E$flags
   fi
+  [[ $flags != *E* ]]
 }
 
-fA=
-host=
-while (($#)); do
-  case "$1" in
-  (-a)
-    fA=1 # show all processes
-    ;;
-  (*)
-    mwg_check "test -z '$host'" "$0:arg\"$1\": host is already specified!"
-    host=$1
-    ;;
-  esac
-  shift
-done
-
-mwg_check '[[ $host ]]' "$0: host is not specified!"
+cputop/read-arguments "$@" || exit 2
 
 cpulook/parse-host "$host" || exit 1
 
-if [[ $fA ]]; then
+if [[ $flags == *a* ]]; then
   rsh.dispatch "$host" COLUMNS=$((COLUMNS-1)) top -cb -n 1
 else
   rsh.dispatch "$host" COLUMNS=$((COLUMNS-1)) top -cb -n 1 | awk '$1=="PID"{head=1;print;next} !head||$8!="S"||$9!=0{print}'
