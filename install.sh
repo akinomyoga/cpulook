@@ -41,20 +41,7 @@ function update {
 }
 
 function update-script {
-  local src=$1
-  local dst=${2:-$CPUDIR/$src}
-  if [[ $src -nt $dst ]]; then
-    echo "cpulook-install: updating '$dst'..."
-    cp -p "$src" "$dst"
-
-    # cpudirを書き換える
-    sed '
-      /^function cpudir\.initialize/i cpudir='"'$CPUDIR'"'
-      /^function cpudir\.initialize/,/^cpudir\.initialize/d
-    ' "$src" > "$dst"
-
-    touch -r "$src" "$dst"
-  fi
+  update "$@"
 }
 
 #------------------------------------------------------------------------------

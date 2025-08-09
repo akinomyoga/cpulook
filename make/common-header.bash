@@ -13,10 +13,3 @@ function cpudir.initialize {
   fi
 }
 cpudir.initialize
-##----CPULOOK_COMMON_HEADER_END----
-
-source "$cpudir/cpudefs.sh"
-
-host=$($cpudir/cpugethost.sh "$1") || exit 1
-
-rsh.dispatch "$host" last|less
