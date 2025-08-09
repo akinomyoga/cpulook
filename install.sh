@@ -5,12 +5,6 @@ if [[ ! $cpulook_prefix ]]; then
   if [[ ${XDG_DATA_HOME-} &&${XDG_DATA_HOME%/} == */share ]]; then
     cpulook_prefix=${XDG_DATA_HOME%/}
     cpulook_prefix=${cpulook_prefix%/share}
-  elif [[ ${MWGDIR-} ]]; then
-    cpulook_prefix=$MWGDIR
-  elif [[ -d ~/.local ]]; then
-    cpulook_prefix=~/.local
-  elif [[ -d ~/.mwg ]]; then
-    cpulook_prefix=~/.mwg
   else
     cpulook_prefix=~/.local
   fi

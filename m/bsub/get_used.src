@@ -88,8 +88,3 @@ result="$(ps uaxf | type="lava.used" host="$host" fjobs="$fjobs" "$cpudir/cpujob
 
 # # v20120424
 # used=$(($(bjobs -m $HOSTNAME 2>&1 |wc -l)-1))
-
-# # dbg20120424
-# dbg=$HOME/.mwg/cpulook/m/bsub/debug.$HOSTNAME.txt
-# echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH PATH=$PATH" >$dbg
-# used=$(($(bjobs -m $HOSTNAME 2>&1 |tee -a $dbg|wc -l)-1))

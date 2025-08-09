@@ -15,8 +15,6 @@ function cpulook/initialize-cpudir {
     cpudir=$script_dir
   elif local dir=${XDG_DATA_HOME:-$HOME/.local/share}/cpulook; [[ -d $dir ]]; then
     cpudir=$dir
-  elif local dir=${MWGDIR:-$HOME/.mwg}/share/cpulook; [[ -d $dir ]]; then
-    cpudir=$dir
   else
     cpudir=$script_dir
   fi
