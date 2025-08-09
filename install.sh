@@ -10,97 +10,97 @@ if [[ ! $cpulook_prefix ]]; then
   fi
 fi
 
-CPUDIR=$cpulook_prefix/share/cpulook
+cpudir=$cpulook_prefix/share/cpulook
 
+function print { printf '%s\n' "${1-}"; }
 function create-dir {
   if [[ ! -d $1 ]]; then
-    echo "cpulook-install: creating directory '$1'"
+    print "cpulook/install: creating directory '$1'"
     mkdir -p "$1"
   fi
 }
 
-function update {
+function install {
   local src=$1
-  local dst=${2:-$CPUDIR/$src}
+  local dst=${2:-$cpudir/$src}
   if [[ $src -nt $dst ]]; then
-    echo "cpulook-install: updating '$dst'..."
+    print "cpulook/install: updating '$dst'..."
     cp -p "$src" "$dst"
   fi
-
-  # cpudir 算出を書き換える場合
-  # sed '
-  #   /^function cpudir\.initialize/i cpudir="$cpulook_prefix/share/cpulook"
-  #   /^function cpudir\.initialize/,/^cpudir\.initialize/d
-  # ' cputop
 }
 
-function update-script {
-  update "$@"
+function install-script {
+  local src=$1
+  local dst=${2:-$cpudir/$src}
+  if [[ $src -nt $dst ]]; then
+    print "cpulook/install: updating '$dst'..."
+    make/cmd.bash install-script "$src" "$dst" "$cpudir"
+  fi
 }
 
 #------------------------------------------------------------------------------
 # <cpudir>/lib
 
-create-dir "$CPUDIR/lib"
-update-script lib/echox.bash
-update-script lib/common.bash
-update        lib/cpujobs.awk
-update-script lib/cpugetdata.sh
+create-dir "$cpudir/lib"
+install        lib/echox.bash
+install        lib/common.bash
+install        lib/cpujobs.awk
+install-script lib/cpugetdata.sh
 
 #------------------------------------------------------------------------------
 # <cpudir>
 
-if [[ ${CPUDIR%/} != ${PWD%/} ]]; then
-  create-dir "$CPUDIR"
+if [[ ${cpudir%/} != ${PWD%/} ]]; then
+  create-dir "$cpudir"
 
   # update m/
-  create-dir "$CPUDIR/m"
+  create-dir "$cpudir/m"
   for d in m/*; do
     if [[ -d $d ]]; then
-      cp -rfp "$d" "$CPUDIR/m/"
+      cp -rfp "$d" "$cpudir/m/"
     fi
   done
 
   # update hosts/
-  create-dir "$CPUDIR/hosts"
-  update-script hosts/sh
-  update-script hosts/ssh
+  create-dir "$cpudir/hosts"
+  install hosts/sh
+  install hosts/ssh
 
   # create m/switch
-  if [[ ! -e $CPUDIR/m/switch ]]; then
+  if [[ ! -e $cpudir/m/switch ]]; then
     if type bsub &>/dev/null; then
-      ln -fs bsub "$CPUDIR/m/switch"
+      ln -fs bsub "$cpudir/m/switch"
     else
-      ln -fs rsh  "$CPUDIR/m/switch"
+      ln -fs rsh  "$cpudir/m/switch"
     fi
   fi
 
   # update scripts
-  update cpulist-default.cfg
-  update-script cpukill
-  update-script cpulast
-  update-script cpulook
-  update-script cpups
-  update-script cpuseekd
-  update-script cpusub
-  update-script cputop
+  install cpulist-default.cfg
+  install-script cpukill
+  install-script cpulast
+  install-script cpulook
+  install-script cpups
+  install-script cpuseekd
+  install-script cpusub
+  install-script cputop
 
   # create configuration
-  local config_cpulist=$CPUDIR/cpulist.cfg
+  local config_cpulist=$cpudir/cpulist.cfg
   if [[ ! -s $config_cpulist ]]; then
-    echo "cpulook-install: creating default '$config_cpulist'."
-    cp -f "$CPUDIR/cpulist-default.cfg" "$config_cpulist"
+    print "cpulook/install: creating default '$config_cpulist'."
+    cp -f "$cpudir/cpulist-default.cfg" "$config_cpulist"
     local nproc=$(
       if type nproc &>/dev/null; then
         nproc 2>/dev/null
       elif [[ -f /proc/cpuinfo ]]; then
         grep -c ^processor /proc/cpuinfo
       else
-        echo 1
+        print 1
       fi)
     ((nproc=nproc<=0?1:nproc))
-    echo "${HOSTNAME##*.} $nproc $nproc 20 $nproc" >> "$config_cpulist"
-    echo "cpulook-install: [1mplease edit '$config_cpulist'.[m"
+    print "${HOSTNAME##*.} $nproc $nproc 20 $nproc" >> "$config_cpulist"
+    print "cpulook/install: [1mplease edit '$config_cpulist'.[m"
   fi
 fi
 
@@ -113,15 +113,15 @@ fi
 
 # check PATH
 if ! [[ $PATH =~ (^|:)"$cpulook_prefix/bin"/?(:|$) ]]; then
-  echo "cpulook-install: [1mplease add '$cpulook_prefix/bin' to the environment variable PATH.[m"
+  print "cpulook/install: [1mplease add '$cpulook_prefix/bin' to the environment variable PATH.[m"
 fi
 
 function install-bin {
   local file=$1
-  local entity=$CPUDIR/$file
+  local entity=$cpudir/$file
   local target=$cpulook_prefix/bin/$file
   if [[ ! -e $target ]]; then
-    echo "cpulook-install: creating link '$target' -> '$entity'"
+    print "cpulook/install: creating link '$target' -> '$entity'"
     ln -fs "$entity" "$target"
   fi
 }
