@@ -36,8 +36,8 @@ function cpulook/initialize-cpudir {
 }
 cpulook/initialize-cpudir
 ##----CPULOOK_COMMON_HEADER_END----
-tmpdir=$HOME/.local/share/cpulook/tmp
-[[ -d $tmpdir ]] || mkdir -p "$tmpdir"
+
+[[ -d $cpulook_cache ]] || mkdir -p "$cpulook_cache"
 
 arg_timeout=
 arg_host_pattern=
@@ -418,8 +418,8 @@ function cpujobs.view {
 #------------------------------------------------------------------------------
 # settings
 
-cpustat="$tmpdir/cpustat.txt"
-cpujobs="$tmpdir/cpujobs.txt"
+cpustat="$cpulook_cache/cpustat.txt"
+cpujobs="$cpulook_cache/cpujobs.txt"
 cpulist="$cpudir/cpulist.cfg"
 
 function cpulist.load {
@@ -469,7 +469,7 @@ function hosts.initialize {
 }
 hosts.initialize
 
-ftime=$tmpdir/cpulook.time
+ftime=$cpulook_cache/cpulook.time
 : > "$ftime"
 
 # collect information
@@ -477,7 +477,7 @@ ftime=$tmpdir/cpulook.time
 function hosts.cpugetdata/check {
   local host count=0 N=${#hosts[@]}
   for host in "${hosts[@]}"; do
-    local fstat="$tmpdir/$host.stat"
+    local fstat="$cpulook_cache/$host.stat"
     [[ -s $fstat && ! ( $fstat -ot $ftime ) ]] && let count++
   done
 
@@ -494,16 +494,16 @@ function hosts.cpugetdata {
     fields=($line)
     host=${fields[0]}
 
-    : > "$tmpdir/$host.stat"
+    : > "$cpulook_cache/$host.stat"
     rsh.dispatch "$host" "lib/cpugetdata.sh $line" 2>/dev/null | gawk \
-      -v fstat="$tmpdir/$host.stat.part" \
-      -v fjobs="$tmpdir/$host.jobs" \
+      -v fstat="$cpulook_cache/$host.stat.part" \
+      -v fjobs="$cpulook_cache/$host.jobs" \
       '
       /^==cpulook\.stat==$/{mode="stat";next;}
       mode=="stat"{print > fstat;}
       /^==cpulook\.jobs==$/{mode="jobs";next;}
       mode=="jobs"{print > fjobs;}
-    ' && /bin/mv "$tmpdir/$host.stat.part" "$tmpdir/$host.stat" &>/dev/null &
+    ' && /bin/mv "$cpulook_cache/$host.stat.part" "$cpulook_cache/$host.stat" &>/dev/null &
   done
 
   wait-until hosts.cpugetdata/check
@@ -516,7 +516,7 @@ create_cpujobs(){
   local first=1
   local cpu=1
   for cpu in "${hosts[@]}"; do
-    local fjobs="$tmpdir/$cpu.jobs"
+    local fjobs="$cpulook_cache/$cpu.jobs"
     if [[ -s $fjobs && ! $fjobs -ot $ftime ]]; then
       if [[ $first ]]; then
         cat "$fjobs"
@@ -534,10 +534,10 @@ create_cpustat(){
   local cpu
   echo "HOST         C  I  NI : UTIL   LOAD   UC ___"
   for cpu in "${hosts[@]}"; do
-    if [[ $tmpdir/$cpu.stat -ot $ftime || ! -s $tmpdir/$cpu.stat ]]; then
+    if [[ $cpulook_cache/$cpu.stat -ot $ftime || ! -s $cpulook_cache/$cpu.stat ]]; then
       printf '%-12s  0  0 -- : ----.- ----.- -- \n' "$cpu"
     else
-      echo "$(< "$tmpdir/$cpu.stat")"
+      echo "$(< "$cpulook_cache/$cpu.stat")"
     fi
   done
 }

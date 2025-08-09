@@ -37,8 +37,6 @@ function cpulook/initialize-cpudir {
 cpulook/initialize-cpudir
 ##----CPULOOK_COMMON_HEADER_END----
 
-tmpdir=$HOME/.local/share/cpulook/tmp
-
 #------------------------------------------------------------------------------
 # definitions
 
@@ -47,7 +45,7 @@ SUBTYPE=$cpudir/m/switch
 cpulist=$cpudir/cpulist.cfg
 list=$cpudir/task.txt
 cook=$cpudir/task.eat
-stat=$tmpdir/cpustat.txt
+stat=$cpulook_cache/cpustat.txt
 seeklog=$cpudir/cpuseekd.log
 
 # configuration

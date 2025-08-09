@@ -22,24 +22,23 @@ get_free_fname() {
 rsh_submitG() {
   (
     id=$BASHPID
-    tmpdir="$HOME/.local/share/cpulook/tmp"
 
     # register command
-    ftmp="$(get_free_fname "$tmpdir/rshsub.$name.$id" .tmp)"
-    fcmd="$(get_free_fname "$tmpdir/rshsub.$name.$id" .cmd)"
+    ftmp="$(get_free_fname "$cpulook_cache/rshsub.$name.$id" .tmp)"
+    fcmd="$(get_free_fname "$cpulook_cache/rshsub.$name.$id" .cmd)"
     echo "$cmd" > "$ftmp"
     mv "$ftmp" "$fcmd"
 
     # try to get the right to execute rsh
-    fown="$tmpdir/rshsub.$name.own"
+    fown="$cpulook_cache/rshsub.$name.own"
     echo -n $id > "$fown"
     sleep 5
     test "$(cat "$fown")" != "$id" && exit
 
     # collect registered commands
-    dcmd="$(get_free_fname "$tmpdir/rshsub.$id")"
+    dcmd="$(get_free_fname "$cpulook_cache/rshsub.$id")"
     mkdir -p "$dcmd"
-    mv "$tmpdir/rshsub.$name".*.cmd "$dcmd/"
+    mv "$cpulook_cache/rshsub.$name".*.cmd "$dcmd/"
 
     # execute rsh
     rsh "$name" "$cpudir/m/rsh/rshexec.sh -n$nice -d$dcmd"

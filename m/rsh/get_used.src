@@ -31,7 +31,7 @@
 #
 
 : ${cpudir:?'$cpudir is empty which should be set in lib/cpugetdata.sh.'}
-: ${tmpdir:?'$tmpdir is empty which should be set in lib/cpugetdata.sh.'}
+: ${cpulook_cache:?'$cpulook_cache is empty which should be set in lib/cpugetdata.sh.'}
 : ${host:=${HOSTNAME%%.*}}
 
 create_regex_cmdline() {
@@ -41,7 +41,7 @@ create_regex_cmdline() {
   echo -n "^$s*$f$f$f$f$f$f$f$f$f$w+$s(.+)$"
 }
 
-fjobs="$tmpdir/$host.jobs"
+fjobs="$cpulook_cache/$host.jobs"
 
 result=($(ps uaxf | type="rsh.used" host="$host" fjobs="$fjobs" "$cpudir/lib/cpujobs.awk"))
 

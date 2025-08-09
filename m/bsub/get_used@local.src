@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
 : ${cpudir:?'$cpudir is empty which should be set in cpulook.'}
-: ${tmpdir:?'$tmpdir is empty which should be set in cpulook.'}
+: ${cpulook_cache:?'$cpulook_cache is empty which should be set in cpulook.'}
 
-ftmp="$tmpdir/bsub.used.part"
-fdat="$tmpdir/bsub.used.dat"
+ftmp="$cpulook_cache/bsub.used.part"
+fdat="$cpulook_cache/bsub.used.dat"
 
 bjobs -u all 2>/dev/null | awk '
   BEGIN{

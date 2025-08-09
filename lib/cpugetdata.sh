@@ -37,9 +37,7 @@ function cpulook/initialize-cpudir {
 cpulook/initialize-cpudir
 ##----CPULOOK_COMMON_HEADER_END----
 
-tmpdir=$HOME/.local/share/cpulook/tmp
-[[ -d $tmpdir ]] || mkdir -p "$tmpdir"
-
+[[ -d $cpulook_cache ]] || mkdir -p "$cpulook_cache"
 
 arg_cascade=
 function cpugetdata.read-options {

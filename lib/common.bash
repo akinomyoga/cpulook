@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+cpulook_cache=${XDG_CACHE_HOME:-$HOME/.cache}/cpulook
+
 function rsh.dispatch {
   local host=$1; shift
   local command="$*"
