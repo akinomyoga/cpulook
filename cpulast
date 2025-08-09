@@ -37,5 +37,13 @@ function cpulook/initialize-cpudir {
 cpulook/initialize-cpudir
 ##----CPULOOK_COMMON_HEADER_END----
 
-cpulook/parse-host "$1" || exit 1
-rsh.dispatch "$host" last | cpulook/view
+function cpulast {
+  if (($#==0)); then
+    cpulook/print 'cpulast: host is not specified.' >&2
+    return 2
+  fi
+  local host
+  cpulook/parse-host "$1" || return 1
+  rsh.dispatch "$host" 'last' | cpulook/view
+}
+cpulast "$@"

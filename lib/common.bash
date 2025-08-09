@@ -58,9 +58,9 @@ function cpulook/parse-host {
   return 1
 }
 
+## @fn rsh.dispatch host command
 function rsh.dispatch {
-  local host=$1; shift
-  local command="$*"
+  local host=$1 command=$2
 
   local handler=$cpudir/hosts/$host.sh
   if [[ -s $handler ]]; then

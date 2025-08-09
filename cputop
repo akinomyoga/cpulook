@@ -41,8 +41,7 @@ cpulook/initialize-cpudir
 ##   @var[out] flags
 ##   @var[out] host
 function cputop/read-arguments {
-  flags=
-  host=
+  flags= host=
   local host_set=
   while (($#)); do
     case $1 in
@@ -64,12 +63,16 @@ function cputop/read-arguments {
   [[ $flags != *E* ]]
 }
 
-cputop/read-arguments "$@" || exit 2
 
-cpulook/parse-host "$host" || exit 1
+function cputop {
+  local flags host
+  cputop/read-arguments "$@" || return 2
+  cpulook/parse-host "$host" || return 1
 
-if [[ $flags == *a* ]]; then
-  rsh.dispatch "$host" COLUMNS=$((COLUMNS-1)) top -cb -n 1
-else
-  rsh.dispatch "$host" COLUMNS=$((COLUMNS-1)) top -cb -n 1 | awk '$1=="PID"{head=1;print;next} !head||$8!="S"||$9!=0{print}'
-fi | cpulook/view
+  if [[ $flags == *a* ]]; then
+    rsh.dispatch "$host" "COLUMNS=$((COLUMNS-1)) top -cb -n 1"
+  else
+    rsh.dispatch "$host" "COLUMNS=$((COLUMNS-1)) top -cb -n 1" | awk '$1=="PID"{head=1;print;next} !head||$8!="S"||$9!=0{print}'
+  fi | cpulook/view
+}
+cputop "$@"
