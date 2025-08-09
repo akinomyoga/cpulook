@@ -1,18 +1,35 @@
 #!/usr/bin/env bash
 
-function cpudir.initialize {
-  local _scr=$(readlink -f "$0" || /bin/readlink -f "$0" || printf '%s\n' "$0") 2>/dev/null
-  local _dir=${_scr%/*}
-  [[ $_dir == "$_scr" ]] && _dir=.
-  if [[ -d ${_dir:=/} ]]; then
-    cpudir=$_dir
-  elif _dir=${XDG_DATA_HOME:-$HOME/.local/share}/cpulook; [[ -d $_dir ]]; then
-    cpudir=$_dir
-  elif _dir=${MWGDIR:-$HOME/.mwg}/share/cpulook; [[ -d $_dir ]]; then
-    cpudir=$_dir
+function cpulook/initialize-cpudir {
+  unset -f "$FUNCNAME"
+
+  local script=$0
+  if [[ -h $script ]]; then
+    local path=$(realpath "$0" || readlink -f "$0" || /bin/readlink -f "$script") 2>/dev/null
+    [[ $path ]] && script=$path
+  fi
+
+  local script_dir=${script%/*}
+  [[ $script_dir == "$script" ]] && script_dir=.
+  if [[ -d ${script_dir:=/} ]]; then
+    cpudir=$script_dir
+  elif local dir=${XDG_DATA_HOME:-$HOME/.local/share}/cpulook; [[ -d $dir ]]; then
+    cpudir=$dir
+  elif local dir=${MWGDIR:-$HOME/.mwg}/share/cpulook; [[ -d $dir ]]; then
+    cpudir=$dir
+  else
+    cpudir=$script_dir
+  fi
+
+  if [[ ! -f $cpudir/cpudefs.sh ]]; then
+    printf '%s\n' "$0: failed to detect the cpulook directory." >&2
+    exit 2
+  elif [[ ! -r $cpudir/cpudefs.sh ]]; then
+    printf '%s\n' "$0: permission denied for the cpulook directory." >&2
+    exit 2
   fi
 }
-cpudir.initialize
+cpulook/initialize-cpudir
 ##----CPULOOK_COMMON_HEADER_END----
 
 CPULST=$cpudir/cpulist.cfg
