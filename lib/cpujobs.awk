@@ -160,21 +160,20 @@ function dbg(name){
 }
 
 #------------------------------------------------------------------------------
-# cpulook/rshexec.sh によって開始されたプロセスツリー
-$0~/\yrshexec.sh --sub -c /{
-  #dbg("rsh0");
+# cpulook/m/rsh/rshexec.sh によって開始されたプロセスツリー
+/\yrshexec.sh --sub -c / {
   output_jobline();
-  mode="rsh";
+  mode = "rsh";
 
-  host=HOST;
-  user=$1;
-  pid=$2;cpu=$3;mem=$4;
-  stat=$8;start=$9;time=get_ctime();
+  host = HOST;
+  user = $1;
+  pid = $2; cpu = $3; mem = $4;
+  stat = $8; start = $9; time = get_ctime();
 
-  _cmdfld=extractCOMMAND($0);
-  headIndex=match(_cmdfld,/([^[:space:]]+\/bash[[:space:]]+([^[:space:]]*\/)?rshexec.sh --sub -c )/,_m);
-  cmd=substr(_cmdfld,headIndex+length(_m[1]));
-  gsub(/^\. ~\/\.bashrc ; cd [^;]+ ; | &>\/dev\/null$/,"",cmd);
+  _cmdfld = extractCOMMAND($0);
+  headIndex = match(_cmdfld, /([^[:space:]]+\/bash[[:space:]]+([^[:space:]]*\/)?rshexec.sh --sub -c )/, _m);
+  cmd = substr(_cmdfld, headIndex + length(_m[1]));
+  gsub(/^\. ~\/\.bashrc ; cd [^;]+ ; | &>\/dev\/null$/, "", cmd);
   next;
 }
 

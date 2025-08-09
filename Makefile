@@ -21,6 +21,7 @@ distexclude = \
 
 script_files = \
   lib/cpugetdata.sh \
+  m/rsh/rshexec.sh \
   cpukill \
   cpulast \
   cpulook \

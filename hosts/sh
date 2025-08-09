@@ -4,7 +4,7 @@
 case $1 in
 (rsh)
   shift
-  (cd "$cpudir"; eval "$*")
+  (cd "${cpudir:-/}"; eval "$*")
   return 0 ;;
 (*)
   cpulook/print 'not supported operation' >&2

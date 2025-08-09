@@ -1,19 +1,47 @@
 #!/usr/bin/env bash
 
-function cpudir.initialize {
-  local _scr="$(test -h "$0" && { readlink -f "$0" || /bin/readlink -f "$0"; } || echo "$0")"
-  local _dir="${_scr%/*}"
-  [[ $_dir == $_scr ]] && _dir=.
-  [[ $_dir ]] || _dir=/
-  cpudir="$_dir"
-}
-cpudir.initialize
+function cpulook/initialize-cpudir {
+  unset -f "$FUNCNAME"
 
-if [[ $cpudir ~ ^(.*)/m/rsh/?$ ]]; then
-  cpudir="$BASH_REMATCH"
-else
-  cpudir="$cpudir/../../"
-fi
+  local script=$0
+  if [[ -h $script ]]; then
+    local path=$(realpath "$0" || readlink -f "$0" || /bin/readlink -f "$script") 2>/dev/null
+    [[ $path ]] && script=$path
+  fi
+
+  [[ $script =~ ^(/?)(.*/)[^/]*$ ]]
+  local script_dir=${BASH_REMATCH[1]:-$PWD/}${BASH_REMATCH[2]}
+  script_dir=${script_dir%/}
+  if [[ -d ${script_dir:-/} ]]; then
+    cpudir=$script_dir
+  elif local dir=${XDG_DATA_HOME:-$HOME/.local/share}/cpulook; [[ -d $dir ]]; then
+    cpudir=$dir
+  else
+    cpudir=$script_dir
+  fi
+
+  # Go to the parent directory until we find $cpudir/lib/cpudef.bash
+  while
+    local common=$cpudir/lib/cpudef.bash
+    if [[ -f $common ]]; then
+      if [[ ! -r $common ]]; then
+        printf '%s\n' "$script: permission denied for the cpulook directory." >&2
+        return 1
+      fi
+      source "$common"
+      return "$?"
+    fi
+    [[ $cpudir == */* ]]
+  do
+    cpudir=${cpudir%/*}
+  done
+
+  cpudir=
+  printf '%s\n' "$script: failed to detect the cpulook directory." >&2
+  return 1
+}
+cpulook/initialize-cpudir || exit "$?"
+##----CPULOOK_COMMON_HEADER_END----
 
 # log_submit
 seeklog="$cpudir/cpuseekd.log"

@@ -9,9 +9,10 @@ function cpulook/initialize-cpudir {
     [[ $path ]] && script=$path
   fi
 
-  local script_dir=${script%/*}
-  [[ $script_dir == "$script" ]] && script_dir=.
-  if [[ -d ${script_dir:=/} ]]; then
+  [[ $script =~ ^(/?)(.*/)[^/]*$ ]]
+  local script_dir=${BASH_REMATCH[1]:-$PWD/}${BASH_REMATCH[2]}
+  script_dir=${script_dir%/}
+  if [[ -d ${script_dir:-/} ]]; then
     cpudir=$script_dir
   elif local dir=${XDG_DATA_HOME:-$HOME/.local/share}/cpulook; [[ -d $dir ]]; then
     cpudir=$dir
@@ -19,22 +20,27 @@ function cpulook/initialize-cpudir {
     cpudir=$script_dir
   fi
 
-  # Note: The file ending with .sh is supposed to be a helper script, which is
-  # already located in the lib subdirectory.
-  [[ $script == *.sh ]] && cpudir=$cpudir/..
+  # Go to the parent directory until we find $cpudir/lib/cpudef.bash
+  while
+    local common=$cpudir/lib/cpudef.bash
+    if [[ -f $common ]]; then
+      if [[ ! -r $common ]]; then
+        printf '%s\n' "$script: permission denied for the cpulook directory." >&2
+        return 1
+      fi
+      source "$common"
+      return "$?"
+    fi
+    [[ $cpudir == */* ]]
+  do
+    cpudir=${cpudir%/*}
+  done
 
-  local common=$cpudir/lib/common.bash
-  if [[ ! -f $common ]]; then
-    printf '%s\n' "$script: failed to detect the cpulook directory." >&2
-    exit 2
-  elif [[ ! -r $common ]]; then
-    printf '%s\n' "$script: permission denied for the cpulook directory." >&2
-    exit 2
-  else
-    source "$common"
-  fi
+  cpudir=
+  printf '%s\n' "$script: failed to detect the cpulook directory." >&2
+  return 1
 }
-cpulook/initialize-cpudir
+cpulook/initialize-cpudir || exit "$?"
 ##----CPULOOK_COMMON_HEADER_END----
 
 function cpups {

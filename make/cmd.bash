@@ -16,7 +16,7 @@ function sub:install-script {
     {
       printf '%s\n' '#!/usr/bin/env bash'
       printf '%s\n' "cpudir='${cpudir//$q/$Q}'"
-      printf '%s\n' 'source "$cpudir/lib/common.bash"'
+      printf '%s\n' 'source "$cpudir/lib/cpudef.bash"'
       sed -n '/^##----CPULOOK_COMMON_HEADER_END----[[:space:]]*$/,$p' "$src"
     } > "$dst.part" &&
     mv "$dst.part" "$dst"

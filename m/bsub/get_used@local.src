@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-: ${cpudir:?'$cpudir is empty which should be set in cpulook.'}
-: ${cpulook_cache:?'$cpulook_cache is empty which should be set in cpulook.'}
+: ${cpudir?'$cpudir is not set. It should be set in cpulook.'}
+: ${cpulook_cache:?'$cpulook_cache is empty. It should be set in cpulook.'}
 
 ftmp="$cpulook_cache/bsub.used.part"
 fdat="$cpulook_cache/bsub.used.dat"

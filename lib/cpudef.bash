@@ -73,5 +73,5 @@ function rsh.dispatch {
     source "$handler" rsh "bash" <<< "$command" && return
   esac
 
-  rsh "$host" "cd $cpudir; bash" <<< "$command"
+  rsh "$host" "cd '${cpudir:-/}'; bash" <<< "$command"
 }

@@ -30,8 +30,8 @@
 #   * implementation using the `bjobs' command
 #
 
-: ${cpudir:?'$cpudir is empty which should be set in lib/cpugetdata.sh.'}
-: ${cpulook_cache:?'$cpulook_cache is empty which should be set in lib/cpugetdata.sh.'}
+: ${cpudir?'$cpudir is not set. It should be set in lib/cpugetdata.sh.'}
+: ${cpulook_cache:?'$cpulook_cache is empty. It should be set in lib/cpugetdata.sh.'}
 : ${host:=${HOSTNAME%%.*}}
 
 getUsedWithLocalBjobs(){

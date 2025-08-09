@@ -43,7 +43,7 @@ function install-script {
 
 create-dir "$cpudir/lib"
 install        lib/echox.bash
-install        lib/common.bash
+install        lib/cpudef.bash
 install        lib/cpujobs.awk
 install-script lib/cpugetdata.sh
 
@@ -54,12 +54,15 @@ if [[ ${cpudir%/} != ${PWD%/} ]]; then
   create-dir "$cpudir"
 
   # update m/
+  # XXXX---specify the files one-by-one
   create-dir "$cpudir/m"
   for d in m/*; do
     if [[ -d $d ]]; then
       cp -rfp "$d" "$cpudir/m/"
     fi
   done
+  rm -f "$cpudir/m/rsh/rshexec.bash"
+  install-script m/rsh/rshexec.bash
 
   # update hosts/
   create-dir "$cpudir/hosts"

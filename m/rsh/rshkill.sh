@@ -2,7 +2,7 @@
 
 rsh_kill(){
   local pid="$1"
-  if ! ps -p "$pid" -o command 2>/dev/null | awk '/^COMMAND/{next}/\yrshexec.sh --sub -c /{t=1}END{if(!t)exit 1}' 2>/dev/null; then
+  if ! ps -p "$pid" -o command 2>/dev/null | awk '/^COMMAND/ { next; } /\yrshexec.sh --sub -c / { t = 1; } END { if (!t) exit 1; }' 2>/dev/null; then
     echo "rshkill.sh: the specified process id '$pid' is not a valid cpujob id." >&2
     return 1
   fi
