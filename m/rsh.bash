@@ -4,18 +4,16 @@ cpulook_system=rsh
 
 #------------------------------------------------------------------------------
 # submit
-#
-# @import @fn log_submit "message"
 
 # 2012-04-24 version
 function cpulook/system:rsh/submit/impl1 {
   if test $nice -ne 0; then
     cmd="renice $nice "'$$'" &>/dev/null ; $cmd"
   fi
-  log_submit "host: $name"
-  log_submit "rsh $name $cmd &"
+  cpulook/seeklog "host: $name"
+  cpulook/seeklog "rsh $name $cmd &"
   rsh "$name" "$cmd" &
-  log_submit "disown"
+  cpulook/seeklog "disown"
   disown
 }
 
@@ -24,7 +22,7 @@ function cpulook/system:rsh/submit/impl5 {
   local fcmd=$cpudir/rshexec.$$.$(md5sum <<< "$cmd" | awk '{printf("%s",$1)}')
   cpulook/put "$cmd" > "$fcmd"
   if [[ ! -s $fcmd ]]; then
-    log_submit "rsh/submit/impl5: ERROR! failed to create a command file '$fcmd'!"
+    cpulook/seeklog "rsh/submit/impl5: ERROR! failed to create a command file '$fcmd'!"
     return 1
   fi
   rsh "$name" "$cpudir/m/rsh/rshexec.sh -n$nice -f$fcmd"
@@ -47,7 +45,7 @@ function cpulook/system:rsh/.get-free-filename {
 
 function cpulook/system:rsh/submit/impl6 {
   (
-    id=${BASHPID:-$$}
+    id=${BASHPID:-$$.$RANDOM}
 
     # register command
     ftmp=$(cpulook/system:rsh/.get-free-filename "$cpulook_cache/rshsub.$name.$id" .tmp)
@@ -63,7 +61,7 @@ function cpulook/system:rsh/submit/impl6 {
 
     # collect registered commands
     dcmd=$(cpulook/system:rsh/.get-free-filename "$cpulook_cache/rshsub.$id")
-    mkdir -p "$dcmd"
+    cpulook/mkdir "$dcmd"
     mv "$cpulook_cache/rshsub.$name".*.cmd "$dcmd/"
 
     # execute rsh
@@ -71,7 +69,7 @@ function cpulook/system:rsh/submit/impl6 {
     rm -rf "$dcmd"
   ) &
 
-  log_submit "rsh/submit/impl6: host=$name cmd=($cmd) -> rshexec.sh"
+  cpulook/seeklog "rsh/submit/impl6: host=$name cmd=($cmd) -> rshexec.sh"
 }
 
 ## @fn cpulook/system:rsh/submit

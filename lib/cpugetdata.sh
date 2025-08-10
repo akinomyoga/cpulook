@@ -43,7 +43,7 @@ function cpulook/initialize-cpudir {
 cpulook/initialize-cpudir || exit "$?"
 ##----CPULOOK_COMMON_HEADER_END----
 
-[[ -d $cpulook_cache ]] || mkdir -p "$cpulook_cache"
+[[ -d $cpulook_cache ]] || cpulook/mkdir "$cpulook_cache"
 
 arg_cascade=
 function cpugetdata.read-options {

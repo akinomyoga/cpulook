@@ -57,7 +57,7 @@ fi
 list=$cpudir/task.txt
 cook=$cpudir/task.eat
 stat=$cpulook_cache/cpustat.txt
-seeklog=$cpudir/cpuseekd.log
+cpulook_log_file=$cpudir/cpuseekd.log
 
 # configuration
 cpu_wait=300
@@ -140,8 +140,9 @@ function allocate_cpu {
     done
     
     if [[ ! $name ]]; then
-      datetime=$(date +'[%x %T]')
-      [[ $fV ]] && echom "$datetime there are no more cpus available. waiting for $cpu_wait seconds ..."
+      if [[ $fV ]]; then
+        echom "$(date +'[%F %T]') there are no more cpus available. waiting for $cpu_wait seconds ..."
+      fi
       sleep $cpu_wait
       update_cpustat
       continue
@@ -164,12 +165,6 @@ function seek_submit {
   local name=$freecpu_name
   local nice=$freecpu_nice
   [[ $name == 0 ]] && exit 1
-
-  datetime=$(date +'[%x %T]')
-  function log_submit {
-    cpulook/print "$datetime $1" >> "$seeklog"
-    [[ $fV ]] && echom "$datetime $1"
-  }
 
   cpulook/system:"$cpulook_system"/submit
   return "$?"

@@ -46,11 +46,4 @@ cpulook/initialize-cpudir || exit "$?"
 source "$cpudir/lib/echox.bash"
 source "$cpudir/m/switch"
 
-flog=$cpudir/cpuseekd.log
-datetime=$(date +'[%x %T]')
-function log_submit {
-  cpulook/print "$datetime $1" >> "$flog"
-  echom "$datetime $1"
-}
-
 cpulook/system:"$cpulook_system"/kill "$@"

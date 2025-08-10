@@ -4,9 +4,39 @@ cpulook_prog=${0##*/}
 cpulook_cache=${XDG_CACHE_HOME:-$HOME/.cache}/cpulook
 cpulook_cpulist=$cpudir/cpulist.cfg
 
+cpulook_bash=$((BASH_VERSINFO[0] * 10000 + BASH_VERSINFO[1] * 100 + BASH_VERSINFO[2]))
+
 function cpulook/put { printf '%s' "${1-}"; }
 function cpulook/print { printf '%s\n' "${1-}"; }
 function cpulook/string#match { [[ $1 =~ $2 ]]; }
+if ((cpulook_bash >= 30200)); then
+  function cpulook/is-function { declare -F "$1" &>/dev/tty; }
+else
+  # Note: bash <= 3.1 has a bug that a function name with special characters
+  # cannot be tested with declare -F.
+  function cpulook/is-function { [[ $(type -t "$1" 2>/dev/null) == 'function' ]]; }
+fi
+if ((cpulook_bash >= 30100)); then
+  function cpulook/array#push { builtin eval -- "$1"'+=("${@:2}")'; }
+else
+  function cpulook/array#push {
+    local _script='ARR=("${ARR[@]}"); while (($#)); do ARR[${#ARR[@]}]=$1; shift; done'
+    _script=${_script//ARR/$1}; shift
+    builtin eval -- "$_script"
+  }
+fi
+
+function cpulook/mkdir {
+  local -a new=()
+  local dir
+  for dir; do
+    [[ -d $dir ]] || cpulook/array#push new "$dir"
+  done
+  if ((${#new[@]})); then
+    mkdir -p "${new[@]}"
+  fi
+}
+
 function cpulook/view {
   if [[ -t 1 ]] && type -P less &>/dev/null; then
     less -FS
@@ -14,6 +44,23 @@ function cpulook/view {
     cat
   fi
 }
+
+cpulook_seeklog_file=$cpudir/cpuseekd.log
+if ((cpulook_bash >= 40200)); then
+  function cpulook/seeklog {
+    local line
+    printf -v line '[%(%F %T)T] %s' -1 "$1"
+    cpulook/print "$line" >> "$cpulook_seeklog_file"
+    cpulook/is-function echom && echom "$line"
+  }
+elif
+  function cpulook/seeklog {
+    local line
+    printf -v line '[%s] %s' "$(date +'%F %T')" "$1"
+    cpulook/print "$line" >> "$cpulook_seeklog_file"
+    cpulook/is-function echom && echom "$line"
+  }
+fi
 
 ## @fn cpulook/parse-host key
 ##   @var[out] host

@@ -3,8 +3,6 @@
 # This implements an adapter to the "bsub" command.  This was tested with
 # OpenLava.
 
-## @import @fn log_submit "message"
-
 cpulook_system=bsub
 
 ## @fn cpulook/system:bsub/submit
@@ -21,8 +19,8 @@ function cpulook/system:bsub/submit {
       s# \{0,1\}[&[:digit:]]\{0,1\}>[^>&;|]\+$##
     ' <<< "$cmd"
   )
-  log_submit "host: $name  title: $title"
-  log_submit "bsub -e /dev/null -o /dev/null -m \"$name\" -J \"$title\" \"$cmd\""
+  cpulook/seeklog "host: $name  title: $title"
+  cpulook/seeklog "bsub -e /dev/null -o /dev/null -m \"$name\" -J \"$title\" \"$cmd\""
   bsub -e /dev/null -o /dev/null -m "$name" -J "$title" "$cmd"
 }
 

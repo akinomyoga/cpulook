@@ -43,13 +43,6 @@ function cpulook/initialize-cpudir {
 cpulook/initialize-cpudir || exit "$?"
 ##----CPULOOK_COMMON_HEADER_END----
 
-# log_submit
-seeklog=$cpudir/cpuseekd.log
-datetime=$(date +'[%x %T]')
-function log_submit {
-  cpulook/print "$datetime rshexec.sh: $*" >> "$seeklog"
-}
-
 # tasks[]
 takks=()
 function tasks_addcmd {
@@ -91,7 +84,7 @@ function readargs {
       flags=$flags:sub
       shift ;;
     (*)
-      log_submit "ERROR! unknown option '$1', execution is canceled."
+      cpulook/seeklog "ERROR! unknown option '$1', execution is canceled."
       flags=$flags:error ;;
     esac
   done
@@ -109,7 +102,7 @@ fi
 [[ $wd ]] && cd "$wd"
 
 if [[ :$flags: == *:sub:* ]] && ((${#tasks[@]}==1)); then
-  log_submit "exec host=$HOSTNAME command=(${tasks[*]})'"
+  cpulook/seeklog "exec host=$HOSTNAME command=(${tasks[*]})'"
   eval "${tasks[0]}"
 else
   (

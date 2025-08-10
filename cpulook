@@ -43,7 +43,7 @@ function cpulook/initialize-cpudir {
 cpulook/initialize-cpudir || exit "$?"
 ##----CPULOOK_COMMON_HEADER_END----
 
-[[ -d $cpulook_cache ]] || mkdir -p "$cpulook_cache"
+[[ -d $cpulook_cache ]] || cpulook/mkdir "$cpulook_cache"
 
 arg_timeout=
 arg_host_pattern=
@@ -519,7 +519,7 @@ function hosts.cpugetdata/check {
 }
 
 function hosts.cpugetdata {
-  if declare -f cpulook/system:"$cpulook_system"/get-used-local &>/dev/null; then
+  if cpulook/is-function cpulook/system:"$cpulook_system"/get-used-local; then
     cpulook/system:"$cpulook_system"/get-used-local
   fi
 
