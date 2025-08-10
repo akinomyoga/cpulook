@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+shopt -s nullglob
+
 cpulook_prefix=${PREFIX-}
 if [[ ! $cpulook_prefix ]]; then
   if [[ ${XDG_DATA_HOME-} &&${XDG_DATA_HOME%/} == */share ]]; then
@@ -39,42 +41,45 @@ function install-script {
 }
 
 #------------------------------------------------------------------------------
-# <cpudir>/lib
-
-create-dir "$cpudir/lib"
-install        lib/echox.bash
-install        lib/cpudef.bash
-install        lib/cpujobs.awk
-install-script lib/cpugetdata.sh
-
-#------------------------------------------------------------------------------
 # <cpudir>
 
 if [[ ${cpudir%/} != ${PWD%/} ]]; then
-  create-dir "$cpudir"
 
-  # update m/
-  # XXXX---specify the files one-by-one
+  # <cpudir>/lib
+  create-dir "$cpudir/lib"
+  install        lib/echox.bash
+  install        lib/cpudef.bash
+  install        lib/cpujobs.awk
+  install-script lib/cpugetdata.sh
+
+  # <cpudir>/m
   create-dir "$cpudir/m"
-  for d in m/*; do
-    if [[ -d $d ]]; then
-      cp -rfp "$d" "$cpudir/m/"
-    fi
+  for f in m/*.bash; do
+    install "$f"
   done
-  rm -f "$cpudir/m/rsh/rshexec.bash"
-  install-script m/rsh/rshexec.bash
+  install-script m/rsh/rshexec.sh
+  install-script m/rsh/rshkill.sh
 
-  # update hosts/
+  # <cpudir>/hosts
   create-dir "$cpudir/hosts"
   install hosts/sh
   install hosts/ssh
 
-  # create m/switch
-  if [[ ! -e $cpudir/m/switch ]]; then
+  # <cpudir>/m/switch: create if non-existent
+  local switch=$cpudir/m/switch
+  if [[ -d $switch || -L $switch && ! -e $switch ]]; then
+    # This is the symbolic link for an old implementation of cpulook.  If the
+    # corresponding file is found, we create a new symbolic link.  If not, we
+    # remove the old symbolic link.
+    local old=$(readlink "$switch")
+    rm -f "$switch"
+    [[ -s m/$old.bash ]] && ln -sf "$old.bash" "$switch"
+  fi
+  if [[ ! -e $switch ]]; then
     if type bsub &>/dev/null; then
-      ln -fs bsub "$cpudir/m/switch"
+      ln -fs bsub.bash "$switch"
     else
-      ln -fs rsh  "$cpudir/m/switch"
+      ln -fs rsh.bash  "$switch"
     fi
   fi
 

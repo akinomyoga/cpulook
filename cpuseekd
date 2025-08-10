@@ -46,7 +46,13 @@ cpulook/initialize-cpudir || exit "$?"
 #------------------------------------------------------------------------------
 # definitions
 
-SUBTYPE=$cpudir/m/switch
+source "$cpudir/m/switch"
+if [[ $1 == v ]]; then
+  fV=v
+  source "$cpudir/lib/echox.bash"
+else
+  fV=
+fi
 
 list=$cpudir/task.txt
 cook=$cpudir/task.eat
@@ -56,13 +62,6 @@ seeklog=$cpudir/cpuseekd.log
 # configuration
 cpu_wait=300
 task_wait=600
-
-if [[ $1 == v ]]; then
-  fV=v
-  source "$cpudir/lib/echox.bash"
-else
-  fV=
-fi
 
 function fileage {
   # how many seconds has past since the file was modified
@@ -172,8 +171,8 @@ function seek_submit {
     [[ $fV ]] && echom "$datetime $1"
   }
 
-  source "$SUBTYPE/submit.src"
-  return
+  cpulook/system:"$cpulook_system"/submit
+  return "$?"
 }
 
 function set_term_title { cpulook/put $'\ek'"$*"$'\e\\'; }

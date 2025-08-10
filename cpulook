@@ -70,7 +70,7 @@ function cpulook/read_argument {
   done
 }
 
-cpulook/read_argument "$@"
+cpulook/read_argument "$@" || exit "$?"
 
 if [[ $flag_help ]]; then
   cat <<EOF
@@ -97,6 +97,8 @@ fi
 
 #------------------------------------------------------------------------------
 # utilities
+
+source "$cpudir/m/switch"
 
 function get_fileage {
   local var=$1 file=$2
@@ -517,8 +519,9 @@ function hosts.cpugetdata/check {
 }
 
 function hosts.cpugetdata {
-  [[ -s $cpudir/m/switch/get_used@local.src ]] && \
-    source "$cpudir/m/switch/get_used@local.src"
+  if declare -f cpulook/system:"$cpulook_system"/get-used-local &>/dev/null; then
+    cpulook/system:"$cpulook_system"/get-used-local
+  fi
 
   local line fields host
   for line in "${cpulist_data[@]}"; do

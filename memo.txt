@@ -17,12 +17,10 @@
 
 * cpu ps, etc. の様に subcommand 式にするべきではないのか?
 
-* m/bsub は lava を想定しているということの明記
+* BASHPID は対応していない bash version がある。
+* mkdir -p は cpulook/mkdir に置き換える。
 
-* m/*/*.src は m/sys.bash に統合する。m/ 以下の install は各ファイルを一つずつ
-  列挙する様にする。switch は未だ存在しない時にのみ作成する。
-
-* GNUmakefile or support BSD make
+* log_submit は改名する。定義箇所を確定する。printf %()T をできれば用いる。
 
 
 ------------------------------------------------------------------------------
@@ -30,6 +28,17 @@
 ------------------------------------------------------------------------------
 
 2025-08-10
+
+* m/*/*.src は m/sys.bash に統合する。m/ 以下の install は各ファイルを一つずつ
+  列挙する様にする。switch は未だ存在しない時にのみ作成する (これは既にそうなっ
+  ていた)。
+
+  m/bsub は lava を想定しているということを明記する → これは取り敢えず
+  m/bsub.bash の中には記述しておいた。恐らくこれで良いだろう。
+
+* GNUmakefile or support BSD make: これは取り敢えず BSD make でも最小限の修正で
+  動く様に、GNU make 特有の記述は使わない様にした。但し、BSD make で実際にテス
+  トしていないので色々とエラーが生じる可能性はある。
 
 * rshexec を cpuexec.sh にしたが、それに対応する rshkill の名前をどうするか。
   lib/cpukill.sh だと cpukill との違いが分かりづらく良くない。という事を考える

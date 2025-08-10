@@ -57,7 +57,7 @@ function cpugetdata.read-options {
 }
 cpugetdata.read-options "$@"
 
-SUBTYPE=$cpudir/m/switch
+source "$cpudir/m/switch"
 
 if [[ $arg_cascade ]]; then
   "$cpudir/cpulook" 3 --cpugetdata --host-pattern="$arg_cascade"
@@ -100,7 +100,7 @@ umax=${cpuinfo[4]}
 # status
 util=$(top -b -n 1 | awk '/^ *[[:digit:]]/{a+=$9;}END{print a;}')
 load=$(awk '{print int($1*100);exit}' /proc/loadavg)
-source "$SUBTYPE/get_used.src"
+cpulook/system:"$cpulook_system"/get-used "$host"
 
 # getline
 cpulook/print '==cpulook.stat=='
