@@ -67,10 +67,9 @@ fi
 ##   @exit
 function cpulook/parse-host {
   host=
-  local key=$1
+  local key=$1 r
 
-  local r=$(awk -v key="$key" '$0 ~ /^[[:space:]]*#|^[[:space:]]*$/ { next; } $1 == key { print $1; }' "$cpulook_cpulist")
-  local c=$(wc -l <<< "$r")
+  r=$(awk -v key="$key" '$0 ~ /^[[:space:]]*#|^[[:space:]]*$/ { next; } $1 == key { print $1; }' "$cpulook_cpulist")
   if [[ $r ]]; then
     if [[ $r == *$'\n'* ]]; then
       cpulook/print "$cpulook_prog! ambiguous hostname '$key'" >&2
@@ -81,7 +80,7 @@ function cpulook/parse-host {
     return 0
   fi
 
-  local r=$(awk -v key="$key" '$0 ~ /^[[:space:]]*#|^[[:space:]]*$/ { next; } $1 ~ key { print $1; }' "$cpulook_cpulist" 2>/dev/null)
+  r=$(awk -v key="$key" '$0 ~ /^[[:space:]]*#|^[[:space:]]*$/ { next; } $1 ~ key { print $1; }' "$cpulook_cpulist" 2>/dev/null)
   if [[ $r ]]; then
     if [[ $r == *$'\n'* ]]; then
       cpulook/print "$cpulook_prog! ambiguous hostname '$key'" >&2
@@ -94,7 +93,7 @@ function cpulook/parse-host {
   fi
 
   local pattern=$(sed -E 's/\b|\B/.*/g' <<< "$key")
-  local r=$(awk -v pattern="$pattern" '$0 ~ /^[[:space:]]*#|^[[:space:]]*$/ { next; } $1 ~ pattern { print $1; }' "$cpulook_cpulist" 2>/dev/null)
+  r=$(awk -v pattern="$pattern" '$0 ~ /^[[:space:]]*#|^[[:space:]]*$/ { next; } $1 ~ pattern { print $1; }' "$cpulook_cpulist" 2>/dev/null)
   if [[ $r && $r != *$'\n'* ]]; then
     cpulook/print "$cpulook_prog: host=$r" >&2
     host=$r

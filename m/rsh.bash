@@ -7,25 +7,27 @@ cpulook_system=rsh
 
 # 2012-04-24 version
 function cpulook/system:rsh/submit/impl1 {
-  if test $nice -ne 0; then
-    cmd="renice $nice "'$$'" &>/dev/null ; $cmd"
+  local host=$1 cmd=$2
+  if ((nice != 0)); then
+    cmd='renice '$nice' "$$" &>/dev/null ; '$cmd
   fi
-  cpulook/seeklog "host: $name"
-  cpulook/seeklog "rsh $name $cmd &"
-  rsh "$name" "$cmd" &
+  cpulook/seeklog "host: $host"
+  cpulook/seeklog "rsh $host $cmd &"
+  rsh "$host" "$cmd" &
   cpulook/seeklog "disown"
   disown
 }
 
 # 2013/05/05 version
 function cpulook/system:rsh/submit/impl5 {
+  local host=$1 cmd=$2
   local fcmd=$cpudir/rshexec.$$.$(md5sum <<< "$cmd" | awk '{printf("%s",$1)}')
   cpulook/put "$cmd" > "$fcmd"
   if [[ ! -s $fcmd ]]; then
     cpulook/seeklog "rsh/submit/impl5: ERROR! failed to create a command file '$fcmd'!"
     return 1
   fi
-  rsh "$name" "$cpudir/m/rsh/rshexec.sh -n$nice -f$fcmd"
+  rsh "$host" "$cpudir/m/rsh/rshexec.sh -n$nice -f$fcmd"
   rm -rf "$fcmd"
 }
 
@@ -44,17 +46,18 @@ function cpulook/system:rsh/.get-free-filename {
 }
 
 function cpulook/system:rsh/submit/impl6 {
+  local host=$1 cmd=$2
   (
     id=${BASHPID:-$$.$RANDOM}
 
     # register command
-    ftmp=$(cpulook/system:rsh/.get-free-filename "$cpulook_cache/rshsub.$name.$id" .tmp)
-    fcmd=$(cpulook/system:rsh/.get-free-filename "$cpulook_cache/rshsub.$name.$id" .cmd)
+    ftmp=$(cpulook/system:rsh/.get-free-filename "$cpulook_cache/rshsub.$host.$id" .tmp)
+    fcmd=$(cpulook/system:rsh/.get-free-filename "$cpulook_cache/rshsub.$host.$id" .cmd)
     cpulook/print "$cmd" > "$ftmp"
     mv "$ftmp" "$fcmd"
 
     # try to get the right to execute rsh
-    fown=$cpulook_cache/rshsub.$name.own
+    fown=$cpulook_cache/rshsub.$host.own
     cpulook/put "$id" > "$fown"
     sleep 5
     [[ $(< "$fown") != "$id" ]] && exit
@@ -62,23 +65,23 @@ function cpulook/system:rsh/submit/impl6 {
     # collect registered commands
     dcmd=$(cpulook/system:rsh/.get-free-filename "$cpulook_cache/rshsub.$id")
     cpulook/mkdir "$dcmd"
-    mv "$cpulook_cache/rshsub.$name".*.cmd "$dcmd/"
+    mv "$cpulook_cache/rshsub.$host".*.cmd "$dcmd/"
 
     # execute rsh
-    rsh "$name" "$cpudir/m/rsh/rshexec.sh -n$nice -d$dcmd"
+    rsh "$host" "$cpudir/m/rsh/rshexec.sh -n$nice -d$dcmd"
     rm -rf "$dcmd"
   ) &
 
-  cpulook/seeklog "rsh/submit/impl6: host=$name cmd=($cmd) -> rshexec.sh"
+  cpulook/seeklog "rsh/submit/impl6: host=$host cmd=($cmd) -> rshexec.sh"
 }
 
-## @fn cpulook/system:rsh/submit
-##   @var[in] name
-##     hostname
+## @fn cpulook/system:rsh/submit host cmd
+##   @param[in] host
+##     The hostname where the command is expected to be run.
+##   @param[in] cmd
+##     The command to run.
 ##   @var[in] nice
 ##     nice value
-##   @var[in] cmd
-##     command
 function cpulook/system:rsh/submit {
   cpulook/system:rsh/submit/impl6 "$@"
 }
@@ -95,10 +98,9 @@ function cpulook/system:rsh/kill.1 {
   fi
   local host=${BASH_REMATCH[1]} pid=${BASH_REMATCH[2]}
 
-  local name=$host
   local nice=0
   local cmd="$cpudir/m/rsh/rshkill.sh $pid"
-  cpulook/system:rsh/submit
+  cpulook/system:rsh/submit "$host" "$cmd"
 }
 
 function cpulook/system:rsh/kill {

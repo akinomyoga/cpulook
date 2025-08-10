@@ -5,23 +5,20 @@
 
 cpulook_system=bsub
 
-## @fn cpulook/system:bsub/submit
-##   @var[in] name
-##     hostname
-##   @var[in] nice
-##     nice value
-##   @var[in] cmd
-##     command
+## @fn cpulook/system:bsub/submit host cmd
+##   @param[in] host
+##   @param[in] cmd
 function cpulook/system:bsub/submit {
+  local host=$1 cmd=$2
   local title=$(
     sed '
       s#^\. ~/\.bashrc \{0,1\}; \{0,1\}cd [^;[:space:]]\{1,\} \{0,1\}; \{0,1\}##
       s# \{0,1\}[&[:digit:]]\{0,1\}>[^>&;|]\+$##
     ' <<< "$cmd"
   )
-  cpulook/seeklog "host: $name  title: $title"
-  cpulook/seeklog "bsub -e /dev/null -o /dev/null -m \"$name\" -J \"$title\" \"$cmd\""
-  bsub -e /dev/null -o /dev/null -m "$name" -J "$title" "$cmd"
+  cpulook/seeklog "host: $host  title: $title"
+  cpulook/seeklog "bsub -e /dev/null -o /dev/null -m \"$host\" -J \"$title\" \"$cmd\""
+  bsub -e /dev/null -o /dev/null -m "$host" -J "$title" "$cmd"
 }
 
 function cpulook/system:bsub/kill {

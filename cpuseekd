@@ -48,145 +48,156 @@ cpulook/initialize-cpudir || exit "$?"
 
 source "$cpudir/m/switch"
 if [[ $1 == v ]]; then
-  fV=v
+  cpuopt_verbose=v
   source "$cpudir/lib/echox.bash"
 else
-  fV=
+  cpuopt_verbose=
 fi
+
+# configuration
+cpuopt_host_wait=300
+cpuopt_task_wait=600
 
 list=$cpudir/task.txt
 cook=$cpudir/task.eat
 stat=$cpulook_cache/cpustat.txt
-cpulook_log_file=$cpudir/cpuseekd.log
 
-# configuration
-cpu_wait=300
-task_wait=600
+#------------------------------------------------------------------------------
+# cpu managing
 
-function fileage {
-  # how many seconds has past since the file was modified
-  local file=$1
-  cpulook/print $(($(date '+%s')-$(date '+%s' -r "$file")))
-}
-
-function isvalidcpu {
-  local cpus=$(awk '/^[[:space:]]*#/{next;}/[^[:space:]]/{print $1}' "$cpulook_cpulist")
+function cpuseekd/wait-next-cpu/.is-valid-cpu {
+  local cpus=$(awk '/^[[:space:]]*#/ { next; } /[^[:space:]]/ { print $1; }' "$cpulook_cpulist")
   local cpu
   for cpu in $cpus; do
     [[ $cpu == "$1" ]] && return 0
   done
 
-  echoe "fatal: invalid cpu name '$1'"
+  cpulook/is-function echoe &&
+    echoe "fatal: invalid cpu name '$1'"
   return 1
 }
 
-#------------------------------------------------------------------------------
-# cpu managing
+## @fn cpuseekd/wait-next-cpu/.is-fresh-file file [duration]
+##   @param[in] file
+##   @param[in,out] duration
+##     The number of seconds for the file to expire
+##   @var[out] expires
+function cpuseekd/wait-next-cpu/.is-fresh-file {
+  local file=$1 duration=${2:-60}
+  [[ -e $file ]] || return 1
+  local now=$(date '+%s')
+  local filetime=$(date '+%s' -r "$file")
+  local age=$((now - filetime))
+  expires=$((duration - age))
+  ((expires>0))
+}
 
-declare -a cpustat_name
-declare -a cpustat_idle
-declare -a cpustat_info
-declare    cpustat_size=0
-declare    cpustat_first=1
-function update_cpustat {
-  if [[ $fV ]]; then
+cpustat_size=
+cpustat_host=()
+cpustat_idle=()
+cpustat_info=()
+function cpuseekd/wait-next-cpu/.update-cpustat {
+  if [[ $cpuopt_verbose ]]; then
     echom "updating current cpustatus ..."
     "$cpudir/cpulook" 10
   else
     "$cpudir/cpulook" 10 &>/dev/null
   fi
 
-  cpustat_first=
   cpustat_size=0
-  while read line; do
-    local -a arr=($line)
-    cpustat_name[${arr[0]}]=${arr[1]}
-    cpustat_idle[${arr[0]}]=${arr[2]}
-    cpustat_nice[${arr[0]}]=${arr[3]}
-    cpustat_size=$(($cpustat_size+1))
-  done < <(awk 'BEGIN{i=0} $3!="I"{print i++,$1,$3,$4}' "$stat")
+  cpustat_host=()
+  cpustat_idle=()
+  cpustat_info=()
+
+  local host idle nice
+  while read -r host _ idle nice _; do
+    cpustat_host[cpustat_size]=$host
+    cpustat_idle[cpustat_size]=$idle
+    cpustat_nice[cpustat_size]=$nice
+    ((cpustat_size++))
+  done < <(awk '$3 != "I"' "$stat")
 }
 
-declare freecpu_name
-declare freecpu_nice
-function allocate_cpu {
-  if [[ ! $cpustat_first && $cpustat_size -eq 0 ]]; then
+## @fn cpuseekd/wait-next-cpu
+##   This function waits for the next available cpu and returns the information
+##   @var[out] host nice
+function cpuseekd/wait-next-cpu {
+  host= nice=
+
+  local expires
+  if [[ $cpustat_size && $cpustat_size -eq 0 ]]; then
     # 残機がないとき暫く待って再度取得
-    if [[ -e $stat ]]; then
-      local _wait=$((60-$(fileage "$stat")))
-      ((_wait>0)) && sleep "$_wait"
-    fi
-    update_cpustat
-  elif [[ $cpustat_first || ! -e $stat || $(fileage "$stat") -gt 60 ]]; then
+    cpuseekd/wait-next-cpu/.is-fresh-file "$stat" 60 && sleep "$expires"
+    cpuseekd/wait-next-cpu/.update-cpustat
+  elif [[ ! $cpustat_size ]] || ! cpuseekd/wait-next-cpu/.is-fresh-file "$stat" 60; then
     # cpustat 情報が古い時、更新
-    update_cpustat
+    cpuseekd/wait-next-cpu/.update-cpustat
   fi
 
+  local i idle
   while true; do
-    local name=
+    for ((i = 0; i < cpustat_size; i++)); do
+      if ((cpustat_idle[i] > 0)); then
+        host=${cpustat_host[i]}
+        idle=${cpustat_idle[i]}
+        nice=${cpustat_nice[i]}
+        ((cpustat_idle[i] = idle - 1))
 
-    local j
-    local n=$cpustat_size
-    for ((j=0;j<n;j++)); do
-      if ((cpustat_idle[j]>0)); then
-        local name=${cpustat_name[j]}
-        local idle=${cpustat_idle[j]}
-        local nice=${cpustat_nice[j]}
-        ((cpustat_idle[j]=idle-1))
-
-        isvalidcpu "$name" || name=
-        break
+        if cpuseekd/wait-next-cpu/.is-valid-cpu "$host"; then
+          host=$host
+          nice=$nice
+          return 0
+        fi
       fi
     done
     
-    if [[ ! $name ]]; then
-      if [[ $fV ]]; then
-        echom "$(date +'[%F %T]') there are no more cpus available. waiting for $cpu_wait seconds ..."
-      fi
-      sleep $cpu_wait
-      update_cpustat
-      continue
+    if [[ $cpuopt_verbose ]]; then
+      echom "$(date +'[%F %T]') No more cpus are available. Waiting for $cpuopt_host_wait seconds..."
     fi
-
-    freecpu_name=$name
-    freecpu_nice=$nice
-    return
+    sleep "$cpuopt_host_wait"
+    cpuseekd/wait-next-cpu/.update-cpustat
   done
 }
 
 #------------------------------------------------------------------------------
 #-- single instance guard --
-(($(ps ux|grep '\bcpuseekd\b'|wc -l) > 1)) || exit 0
+(($(ps ux | grep '\bcpuseekd\b' | wc -l) > 1)) || exit 0
 
-function seek_submit {
-  local cmd=$1
-
-  allocate_cpu
-  local name=$freecpu_name
-  local nice=$freecpu_nice
-  [[ $name == 0 ]] && exit 1
-
-  cpulook/system:"$cpulook_system"/submit
-  return "$?"
+function set-term-title {
+  if [[ -t 1 ]]; then
+    cpulook/put $'\ek[cpuseekd: '"$1"$']\e\\'
+  fi
 }
 
-function set_term_title { cpulook/put $'\ek'"$*"$'\e\\'; }
-
-function next_tasklist {
+function cpuseekd/wait-next-tasklist {
   [[ -s $list ]] && return 0
 
-  set_term_title "cpuseekd: ### waiting next task.txt... ###"
-  sleep $task_wait
+  set-term-title "### waiting next task.txt... ###"
+  sleep "$cpuopt_task_wait"
   [[ -s $list ]]
 }
 
-while next_tasklist; do
-  [[ -f $cook ]] && mv "$cook" "$cook.$(date +%Y%m%d-%H%M%S -r "$cook")"
-  mv "$list" "$cook"
-  iN=$(cat "$cook" | wc -l)
-  for((i=1;i<=iN;i++)); do
-    set_term_title "cpuseekd: ### throwing task $i/$iN ###"
-    cmd="$(tail -n +$i $cook | head -1)"
-    [[ -n $cmd ]] && seek_submit "$cmd"
+function cpuseekd/submit {
+  local cmd=$1
+
+  local host nice
+  cpuseekd/wait-next-cpu
+  [[ $host == 0 ]] && exit 1
+
+  cpulook/system:"$cpulook_system"/submit "$host" "$cmd"
+  return "$?"
+}
+
+function cpuseekd {
+  while cpuseekd/wait-next-tasklist; do
+    [[ -f $cook ]] && mv "$cook" "$cook.$(date +%Y%m%d-%H%M%S -r "$cook")"
+    mv "$list" "$cook"
+    local i iN=$(wc -l < "$cook")
+    for ((i = 1; i <= iN; i++)); do
+      set-term-title "### throwing task $i/$iN ###"
+      local cmd=$(tail -n +"$i" "$cook" | head -1)
+      [[ $cmd ]] && cpuseekd/submit "$cmd"
+    done
   done
-done
+}
+cpuseekd
