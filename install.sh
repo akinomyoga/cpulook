@@ -43,8 +43,7 @@ function install-script {
 #------------------------------------------------------------------------------
 # <cpudir>
 
-if [[ ${cpudir%/} != ${PWD%/} ]]; then
-
+function install-files {
   # <cpudir>/lib
   create-dir "$cpudir/lib"
   install        lib/echox.bash
@@ -57,6 +56,7 @@ if [[ ${cpudir%/} != ${PWD%/} ]]; then
   for f in m/*.bash; do
     install "$f"
   done
+  create-dir "$cpudir/m/rsh"
   install-script m/rsh/rshexec.sh
   install-script m/rsh/rshkill.sh
 
@@ -110,6 +110,10 @@ if [[ ${cpudir%/} != ${PWD%/} ]]; then
     print "${HOSTNAME##*.} $nproc $nproc 20 $nproc" >> "$config_cpulist"
     print "cpulook/install: [1mplease edit '$config_cpulist'.[m"
   fi
+}
+
+if [[ ${cpudir%/} != ${PWD%/} ]]; then
+  install-files
 fi
 
 #------------------------------------------------------------------------------
