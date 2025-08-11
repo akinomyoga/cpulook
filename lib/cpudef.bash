@@ -10,7 +10,7 @@ function cpulook/put { printf '%s' "${1-}"; }
 function cpulook/print { printf '%s\n' "${1-}"; }
 function cpulook/string#match { [[ $1 =~ $2 ]]; }
 if ((cpulook_bash >= 30200)); then
-  function cpulook/is-function { declare -F "$1" &>/dev/tty; }
+  function cpulook/is-function { declare -F "$1" &>/dev/null; }
 else
   # Note: bash <= 3.1 has a bug that a function name with special characters
   # cannot be tested with declare -F.
@@ -53,7 +53,7 @@ if ((cpulook_bash >= 40200)); then
     cpulook/print "$line" >> "$cpulook_seeklog_file"
     cpulook/is-function echom && echom "$line"
   }
-elif
+else
   function cpulook/seeklog {
     local line
     printf -v line '[%s] %s' "$(date +'%F %T')" "$1"
